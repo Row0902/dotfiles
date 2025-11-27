@@ -6,20 +6,16 @@ CONFIG_DIR="$HOME/.config/fish"
 TEMP_DIR="$HOME/tmp_dotfiles_installer"
 BASH_CUSTOM_FILE="$HOME/.bash_custom"
 
-# Colores
+# Colores (Output Visual)
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-# --- 0. Saludo Inicial ---
-USER_NAME=$(whoami)
-printf "\n${BLUE}👋 Hola ${GREEN}${USER_NAME}${BLUE}, bienvenido a tu instalador de dotfiles.${NC}\n"
-sleep 1 # Pequeña pausa para que se lea el saludo
-
 # --- 1. Detección del Entorno ---
 detect_env() {
+    # 1.1 Detectar Arquitectura
     ARCH=$(uname -m)
     case $ARCH in
         x86_64) LAZYGIT_ARCH="x86_64" ;;
@@ -27,6 +23,18 @@ detect_env() {
         *) LAZYGIT_ARCH="x86_64" ;; 
     esac
 
+    # 1.2 Detectar Nombre del Sistema Operativo
+    if [ -f /etc/os-release ]; then
+        # Cargar datos estándar de Linux (NAME, VERSION, etc.)
+        . /etc/os-release
+        OS_NAME="${NAME:-Linux}"
+    elif [ "$(uname)" = "Darwin" ]; then
+        OS_NAME="macOS"
+    else
+        OS_NAME="$(uname -s)"
+    fi
+
+    # 1.3 Detectar Gestor de Paquetes
     if command -v apt-get >/dev/null 2>&1; then
         PM="apt-get"
         INSTALL_CMD="sudo apt-get install -y -qq"
@@ -52,7 +60,7 @@ detect_env() {
         PKG_7Z="p7zip"
         PKG_BAT="bat"
     else
-        printf "${RED}❌ Error: No se detectó un gestor de paquetes soportado.${NC}\n"
+        printf "${RED}❌ Error: No se encontró un gestor de paquetes soportado.${NC}\n"
         exit 1
     fi
 }
@@ -64,27 +72,29 @@ ensure_command() {
     pkg="${2:-$1}"
     if ! command -v "$cmd" >/dev/null 2>&1; then
         printf "${YELLOW}📦 Instalando $pkg...${NC}\n"
+        # Actualización inteligente: solo la primera vez para apt
         if [ "$PM" = "apt-get" ] && [ -z "$APT_UPDATED" ]; then 
             $UPDATE_CMD >/dev/null 2>&1
             APT_UPDATED=true
         fi
-        $INSTALL_CMD "$pkg"
+        $INSTALL_CMD "$pkg" >/dev/null 2>&1
     else
         printf "${GREEN}✅ $cmd ya está instalado.${NC}\n"
     fi
 }
 
 ensure_bat() {
+    # Bat requiere manejo especial por conflicto de nombres en Debian (batcat)
     if command -v bat >/dev/null 2>&1; then
         printf "${GREEN}✅ bat ya está instalado.${NC}\n"
     elif command -v batcat >/dev/null 2>&1; then
-        printf "${GREEN}✅ batcat detectado. Verificando enlace...${NC}\n"
         mkdir -p "$HOME/.local/bin"
         ln -sf "$(which batcat)" "$HOME/.local/bin/bat"
+        printf "${GREEN}✅ batcat enlazado como bat.${NC}\n"
     else
         printf "${YELLOW}📦 Instalando bat...${NC}\n"
         if [ "$PM" = "apt-get" ] && [ -z "$APT_UPDATED" ]; then $UPDATE_CMD >/dev/null 2>&1; APT_UPDATED=true; fi
-        $INSTALL_CMD "$PKG_BAT"
+        $INSTALL_CMD "$PKG_BAT" >/dev/null 2>&1
         if command -v batcat >/dev/null 2>&1; then
              mkdir -p "$HOME/.local/bin"
              ln -sf "$(which batcat)" "$HOME/.local/bin/bat"
@@ -110,39 +120,41 @@ prepare_repo() {
     git clone --quiet "$REPO_URL" "$TEMP_DIR"
 }
 
-# --- INSTALACIÓN DE HERRAMIENTAS ---
+# --- HERRAMIENTAS ---
 install_tools() {
-    printf "\n${BLUE}🛠  Verificando e instalando herramientas...${NC}\n"
+    printf "\n${BLUE}🛠  Verificando herramientas...${NC}\n"
     
+    # Básicos
     ensure_command "git"
     ensure_command "curl"
     ensure_command "direnv"
-
-    printf "${BLUE}📦 Verificando utilidades de compresión...${NC}\n"
+    
+    # Compresión
     ensure_command "unzip"
     ensure_command "unrar"
     ensure_command "7z" "$PKG_7Z"
-
-    printf "${BLUE}🚀 Instalando herramientas modernas...${NC}\n"
+    
+    # Modern Stack
     ensure_command "fzf"
     ensure_command "zoxide"
     ensure_command "rg" "ripgrep"
     ensure_command "delta" "git-delta"
     ensure_bat
     
+    # Eza (ls replacement)
     if ! command -v eza >/dev/null 2>&1; then
-        printf "${YELLOW}📦 Intentando instalar eza...${NC}\n"
-        $INSTALL_CMD eza 2>/dev/null || printf "${RED}⚠️ No se pudo instalar 'eza'.${NC}\n"
-    else
-        printf "${GREEN}✅ eza ya está instalado.${NC}\n"
+        printf "${YELLOW}📦 Instalando eza...${NC}\n"
+        $INSTALL_CMD eza >/dev/null 2>&1 || printf "${RED}⚠️ No se pudo instalar eza (se usará ls).${NC}\n"
     fi
 
+    # Configuración Git Delta
     if command -v delta >/dev/null 2>&1; then
         git config --global core.pager "delta"
         git config --global interactive.diffFilter "delta --color-only"
         git config --global delta.navigate true
     fi
 
+    # Lazygit
     if ! command -v lazygit >/dev/null 2>&1; then
         if [ "$PM" = "brew" ]; then
             brew install lazygit
@@ -153,28 +165,23 @@ install_tools() {
             tar xf lazygit.tar.gz lazygit
             sudo install lazygit /usr/local/bin
             rm lazygit lazygit.tar.gz
-            printf "${GREEN}✅ Lazygit instalado.${NC}\n"
         fi
-    else
-        printf "${GREEN}✅ Lazygit ya está instalado.${NC}\n"
     fi
 
+    # Lazydocker
     if ! command -v lazydocker >/dev/null 2>&1; then
         printf "${YELLOW}📦 Instalando Lazydocker...${NC}\n"
-        curl https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
-    else
-        printf "${GREEN}✅ Lazydocker ya está instalado.${NC}\n"
+        curl https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash >/dev/null 2>&1
     fi
 
+    # Atuin
     if ! command -v atuin >/dev/null 2>&1; then
          printf "${YELLOW}📦 Instalando Atuin...${NC}\n"
-         curl --proto '=https' --tlsv1.2 -sSf https://setup.atuin.sh | sh
-    else
-         printf "${GREEN}✅ Atuin ya está instalado.${NC}\n"
+         curl --proto '=https' --tlsv1.2 -sSf https://setup.atuin.sh | sh >/dev/null 2>&1
     fi
 }
 
-# --- CONFIGURACIÓN FISH ---
+# --- FISH ---
 install_fish_config() {
     prepare_repo
     
@@ -189,19 +196,17 @@ install_fish_config() {
 
     printf "${BLUE}🔌 Instalando plugins Fisher...${NC}\n"
     if command -v fish >/dev/null 2>&1; then
-        fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update"
+        fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update" >/dev/null 2>&1
         
-        printf "${BLUE}🔗 Integrando hooks en config.fish...${NC}\n"
+        # Hooks
         CFILE="$CONFIG_DIR/config.fish"
         add_line_to_file 'if status is-interactive; and type -q atuin; atuin init fish | source; end' "$CFILE"
         add_line_to_file 'if type -q direnv; direnv hook fish | source; end' "$CFILE"
-    else
-         printf "${RED}⚠️ Fish no está instalado.${NC}\n"
     fi
 
     FISH_BIN=$(which fish)
     if [ "$SHELL" != "$FISH_BIN" ] && [ -n "$FISH_BIN" ]; then
-        printf "\n${YELLOW}❓ ¿Establecer Fish como shell por defecto? (s/n): ${NC}"
+        printf "\n${YELLOW}❓ ¿Establecer Fish como default? (s/n): ${NC}"
         read choice
         if [ "$choice" = "s" ]; then
              if ! grep -q "$FISH_BIN" /etc/shells; then echo "$FISH_BIN" | sudo tee -a /etc/shells >/dev/null; fi
@@ -212,7 +217,7 @@ install_fish_config() {
     rm -rf "$TEMP_DIR"
 }
 
-# --- CONFIGURACIÓN BASH ---
+# --- BASH ---
 install_bash_config() {
     prepare_repo
     cp "$TEMP_DIR/bash/.bash_custom" "$BASH_CUSTOM_FILE"
@@ -226,7 +231,7 @@ install_bash_config() {
         echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$HOME/.bashrc"
     fi
 
-    printf "${BLUE}🔗 Integrando hooks en .bashrc...${NC}\n"
+    # Hooks
     add_line_to_file '[[ -f ~/.atuin/bin/env ]] && source ~/.atuin/bin/env' "$HOME/.bashrc"
     add_line_to_file 'if command -v atuin >/dev/null; then eval "$(atuin init bash)"; fi' "$HOME/.bashrc"
     add_line_to_file 'if command -v direnv >/dev/null; then eval "$(direnv hook bash)"; fi' "$HOME/.bashrc"
@@ -237,19 +242,24 @@ install_bash_config() {
 
 # --- MAIN ---
 detect_env
-clear
-printf "${BLUE}=========================================${NC}\n"
-printf "${BLUE}   DOTFILES INSTALLER v2.2 (Saludador)   ${NC}\n"
-printf "${BLUE}   Usuario: ${GREEN}$USER_NAME${BLUE} | Sistema: $PM${NC}\n"
-printf "${BLUE}=========================================${NC}\n"
+USER_NAME=$(whoami)
+
+# Header Informativo
+printf "\n${BLUE}=================================================${NC}\n"
+printf "${BLUE}   DOTFILES INSTALLER v3.2 (Production Ready)    ${NC}\n"
+printf "${BLUE}   👋 Usuario: ${GREEN}$USER_NAME${NC}\n"
+printf "${BLUE}   💻 Sistema: ${GREEN}$OS_NAME${NC}\n"
+printf "${BLUE}   📦 Gestor:  ${GREEN}$PM${NC}\n"
+printf "${BLUE}=================================================${NC}\n"
+
 printf "Selecciona entorno:\n"
-printf "  ${GREEN}1)${NC} Fish (Recomendado)\n"
-printf "  ${GREEN}0)${NC} Bash (Legacy)\n"
+printf "  ${GREEN}0)${NC} Fish (Recomendado)\n"
+printf "  ${GREEN}1)${NC} Bash (Legacy)\n"
 printf "Opción: "
 read opcion
 
 case "$opcion" in
-    1) install_tools; install_fish_config ;;
-    0) install_tools; install_bash_config ;;
+    0) install_tools; install_fish_config ;;
+    1) install_tools; install_bash_config ;;
     *) echo "Opción inválida."; exit 1 ;;
 esac
