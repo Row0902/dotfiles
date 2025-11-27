@@ -1,0 +1,117 @@
+#!/bin/bash
+# --- Sección: Configuración del prompt ---
+
+# PS1 Configurado: Usuario:Carpeta (Rama Git)
+if [ "$TERM" != "linux" ]; then
+    PS1='\[\e]0;\u:\W\a\]\[\e[32m\]\W\[\e[m\]$(__git_ps1 " (%s)") $ '
+else
+    PS1='\[\e[32m\]\W\[\e[m\]$(__git_ps1 " (%s)") $ '
+fi
+
+# --- Sección: Alias ---
+alias cls='clear'
+alias .bash='source ~/.bashrc'
+alias cd..='cd ..'
+alias src='source'
+alias lzg='lazygit'
+alias lzd='lazydocker'
+alias g='git'
+alias nd='node'
+alias nv='nvim'
+alias wg='winget.exe'
+
+# Git Alias
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git pull'
+alias gs='git status'
+alias gb='git branch'
+alias gco='git checkout'
+
+# Docker Alias
+alias dk='docker'
+alias dkc='docker compose'
+alias dkps='docker ps -a'
+alias dki='docker images'
+alias dkr='docker run'
+alias dkb='docker build'
+
+# --- Sección: Historial ---
+HISTSIZE=10000
+HISTFILESIZE=20000
+export HISTCONTROL=ignoredups:erasedups
+shopt -s histappend
+PROMPT_COMMAND="history -a"
+
+# --- Sección: SSH Agent ---
+if [ -z "$SSH_AGENT_PID" ]; then
+    # Solo iniciar si no hay uno corriendo
+    eval "$(ssh-agent -s)" > /dev/null 2>&1
+fi
+
+# --- Sección: Funciones Utiles ---
+
+mkcd() { mkdir -p "$1" && cd "$1" || echo "Error: No se pudo crear '$1'"; }
+
+cdrm() {
+    local current_dir="$(pwd)"
+    local dir_name="$(basename "$current_dir")"
+    read -p "¿Eliminar '$dir_name'? (s/n): " confirm
+    [[ "$confirm" != "s" ]] && return 1
+    cd .. || return 1
+    rm -rf "$current_dir" 2>/dev/null && echo "Eliminado." || echo "Error al eliminar."
+}
+
+up() {
+    local levels="${1:-1}"
+    local path=""
+    for ((i=0; i<levels; i++)); do path="../$path"; done
+    cd "$path" || echo "Error al subir niveles."
+}
+
+cdl() {
+    local dirs
+    mapfile -t dirs < <(find . -maxdepth 1 -mindepth 1 -type d -not -name '.*' | sed 's|^\./||')
+    [ ${#dirs[@]} -eq 0 ] && echo "No hay directorios." && return 1
+    echo "Directorios:"
+    for i in "${!dirs[@]}"; do echo "$i: ${dirs[i]}"; done
+    read -p "Selecciona (0-$((${#dirs[@]}-1))): " choice
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 0 ] && [ "$choice" -lt ${#dirs[@]} ]; then
+        cd "${dirs[choice]}"
+    else
+        echo "Inválido."
+    fi
+}
+
+cleanempty() {
+    find . -type d -empty
+    read -p "¿Eliminar vacíos? (s/n): " c
+    [ "$c" = "s" ] && find . -type d -empty -delete && echo "Eliminados."
+}
+
+mktempd() {
+    local t=$(mktemp -d)
+    cd "$t" && echo "En: $t"
+}
+
+gitclone() {
+    [ -z "$1" ] && echo "Falta URL" && return 1
+    git clone "$1" && cd "$(basename "$1" .git)"
+}
+
+gitinit() {
+    mkdir -p "$1" && cd "$1" && git init
+    if [ "${2:-yes}" = "yes" ]; then
+        echo "# $1" > README.md
+        git add README.md && git commit -m "Init"
+    fi
+}
+
+# --- Carga de scripts externos (Si existen) ---
+# Nota: Asegúrate de que estos archivos existan en tu backup o el script de instalación los cree
+if [ -f ~/.bash_completions_linux/row.sh ]; then
+    source ~/.bash_completions_linux/row.sh
+fi
+
+echo "🚀 Entorno Bash Custom cargado correctamente."
