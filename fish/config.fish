@@ -60,3 +60,30 @@ end
 # bun
 set --export BUN_INSTALL "$HOME/.bun"
 set --export PATH $BUN_INSTALL/bin $PATH
+
+# ... tus otras configuraciones ...
+
+    # --- Herramientas Modernas ---
+    # Zoxide (Reemplazo de cd)
+    if type -q zoxide
+        zoxide init fish | source
+        alias cd='z'
+    end
+
+    # Eza (Reemplazo de ls)
+    if type -q eza
+        alias ls='eza --icons'
+        alias ll='eza -la --icons'
+        alias lt='eza --tree --level=2 --icons'
+    end
+
+    # Bat (Reemplazo de cat)
+    if type -q bat
+        alias cat='bat'
+    end
+    
+    # FZF con Ripgrep (Para búsquedas rápidas)
+    if type -q rg
+        set -gx FZF_DEFAULT_COMMAND 'rg --files --hidden --follow --no-ignore-vcs'
+        set -gx FZF_CTRL_T_COMMAND "$FZF_DEFAULT_COMMAND"
+    end

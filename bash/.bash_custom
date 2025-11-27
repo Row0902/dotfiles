@@ -113,3 +113,31 @@ gitinit() {
 if [ -f ~/.bash_completions_linux/row.sh ]; then
     source ~/.bash_completions_linux/row.sh
 fi
+
+# ... tus otras funciones ...
+
+# --- Integración Herramientas Modernas ---
+
+# Zoxide
+if command -v zoxide >/dev/null 2>&1; then
+    eval "$(zoxide init bash)"
+    alias cd='z'
+fi
+
+# Eza
+if command -v eza >/dev/null 2>&1; then
+    alias ls='eza --icons'
+    alias ll='eza -la --icons'
+    alias lt='eza --tree --level=2 --icons'
+fi
+
+# Bat
+if command -v bat >/dev/null 2>&1; then
+    alias cat='bat'
+fi
+
+# FZF + Ripgrep
+if command -v rg >/dev/null 2>&1; then
+    export FZF_DEFAULT_COMMAND='rg --files --hidden --follow --no-ignore-vcs'
+    export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+fi

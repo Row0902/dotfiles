@@ -15,14 +15,38 @@ NC='\033[0m'
 
 # --- Funciones de Ayuda ---
 
-# Verifica si un comando existe. Si no, lo instala.
+# Verifica si un comando existe. Si no, intenta instalarlo.
 ensure_command() {
-    if ! command -v "$1" >/dev/null 2>&1; then
-        printf "${YELLOW}📦 Instalando $1...${NC}\n"
+    cmd="$1"
+    pkg="${2:-$1}" # Si se da un segundo argumento, es el nombre del paquete en apt
+    
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        printf "${YELLOW}📦 Instalando $pkg...${NC}\n"
         sudo apt-get update -qq >/dev/null 2>&1
-        sudo apt-get install -y -qq "$1"
+        sudo apt-get install -y -qq "$pkg"
     else
-        printf "${GREEN}✅ $1 ya está instalado.${NC}\n"
+        printf "${GREEN}✅ $cmd ya está instalado.${NC}\n"
+    fi
+}
+
+# Función especial para 'bat' que en Debian/Ubuntu se llama 'batcat'
+ensure_bat() {
+    if command -v bat >/dev/null 2>&1; then
+        printf "${GREEN}✅ bat ya está instalado.${NC}\n"
+    elif command -v batcat >/dev/null 2>&1; then
+        printf "${GREEN}✅ batcat ya está instalado. Creando enlace 'bat'...${NC}\n"
+        # Crear enlace simbólico seguro en ~/.local/bin
+        mkdir -p "$HOME/.local/bin"
+        ln -sf "$(which batcat)" "$HOME/.local/bin/bat"
+    else
+        printf "${YELLOW}📦 Instalando bat...${NC}\n"
+        sudo apt-get update -qq >/dev/null 2>&1
+        sudo apt-get install -y -qq bat
+        # Verificar si se instaló como batcat y enlazar
+        if command -v batcat >/dev/null 2>&1; then
+             mkdir -p "$HOME/.local/bin"
+             ln -sf "$(which batcat)" "$HOME/.local/bin/bat"
+        fi
     fi
 }
 
@@ -48,7 +72,7 @@ install_fish_config() {
     cp -r "$TEMP_DIR/fish/." "$CONFIG_DIR/"
     chmod -R 755 "$CONFIG_DIR/functions"
 
-    # Limpieza preventiva de conflictos de plugins
+    # Limpieza preventiva de conflictos
     rm -f "$CONFIG_DIR/functions/_fzf_"* 2>/dev/null
     rm -f "$CONFIG_DIR/functions/_autopair_"* 2>/dev/null
     rm -f "$CONFIG_DIR/functions/fisher.fish" 2>/dev/null
@@ -90,23 +114,21 @@ install_bash_config() {
     printf "${BLUE}📂 Instalando .bash_custom...${NC}\n"
     cp "$TEMP_DIR/bash/.bash_custom" "$BASH_CUSTOM_FILE"
     
-    # --- CORRECCIÓN CRÍTICA PARA DEBIAN/LINUX ---
-    # Elimina los retornos de carro (\r) que Windows agrega, evitando errores de sintaxis
+    # Corrección de saltos de línea Windows -> Unix
     if command -v sed >/dev/null 2>&1; then
         sed -i 's/\r$//' "$BASH_CUSTOM_FILE"
         printf "${GREEN}🔧 Formato de archivo corregido (Windows -> Unix).${NC}\n"
     fi
-    # --------------------------------------------
 
-    # Crear carpeta para completions extra si no existe
     mkdir -p "$HOME/.bash_completions_linux"
 
-    # Inyectar en .bashrc si no existe
     if ! grep -q ".bash_custom" "$HOME/.bashrc"; then
         printf "\n# --- Custom Bash Config ---\n" >> "$HOME/.bashrc"
         printf "if [ -f ~/.bash_custom ]; then\n" >> "$HOME/.bashrc"
         printf "    source ~/.bash_custom\n" >> "$HOME/.bashrc"
         printf "fi\n" >> "$HOME/.bashrc"
+        # Asegurar que ~/.local/bin esté en el PATH para bat/zoxide
+        printf "export PATH=\"\$HOME/.local/bin:\$PATH\"\n" >> "$HOME/.bashrc"
         printf "${GREEN}✅ Configuración añadida a .bashrc${NC}\n"
     else
         printf "${GREEN}✅ .bashrc ya estaba configurado.${NC}\n"
@@ -116,29 +138,45 @@ install_bash_config() {
     printf "${GREEN}🎉 Bash configurado. Ejecuta 'source ~/.bashrc' para ver cambios.${NC}\n"
 }
 
+# --- INSTALACIÓN DE HERRAMIENTAS COMUNES ---
+install_tools() {
+    printf "\n${BLUE}🛠  Instalando herramientas modernas (Rust)...${NC}\n"
+    ensure_command "git"
+    ensure_command "curl"
+    ensure_command "fzf"
+    ensure_command "zoxide"
+    ensure_command "rg" "ripgrep"
+    ensure_bat  # Instala bat o batcat y lo vincula
+    
+    # Eza es más nuevo, intentamos instalarlo, si falla no rompemos el script
+    if ! command -v eza >/dev/null 2>&1; then
+        printf "${YELLOW}📦 Intentando instalar eza (ls moderno)...${NC}\n"
+        sudo apt-get install -y -qq eza 2>/dev/null || printf "${RED}⚠️ No se pudo instalar 'eza' automáticamente (quizás tu distro es antigua). Se usará 'ls'.${NC}\n"
+    else
+        printf "${GREEN}✅ eza ya está instalado.${NC}\n"
+    fi
+}
+
 # --- MENÚ PRINCIPAL ---
 clear
 printf "${BLUE}=========================================${NC}\n"
 printf "${BLUE}   INSTALADOR DE DOTFILES (Rowell)       ${NC}\n"
 printf "${BLUE}=========================================${NC}\n"
 printf "Selecciona qué entorno deseas configurar:\n\n"
-printf "  ${GREEN}0)${NC} Bash (Personalizado + FZF)\n"
-printf "  ${GREEN}1)${NC} Fish (Completo + FZF)\n\n"
+printf "  ${GREEN}0)${NC} Bash (Personalizado + Tools)\n"
+printf "  ${GREEN}1)${NC} Fish (Completo + Tools)\n\n"
 printf "Opción: "
 read opcion
 
 case "$opcion" in
     1)
         printf "\n${BLUE}🚀 Iniciando instalación de Fish...${NC}\n"
-        ensure_command "git"
-        ensure_command "fish"
-        ensure_command "fzf"
+        install_tools
         install_fish_config
         ;;
     0)
         printf "\n${BLUE}🚀 Iniciando instalación de Bash...${NC}\n"
-        ensure_command "git"
-        ensure_command "fzf"
+        install_tools
         install_bash_config
         ;;
     *)
