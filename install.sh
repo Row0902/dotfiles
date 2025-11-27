@@ -13,36 +13,73 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+# --- Detección del Gestor de Paquetes ---
+detect_package_manager() {
+    if command -v apt-get >/dev/null 2>&1; then
+        PM="apt-get"
+        INSTALL_CMD="sudo apt-get install -y -qq"
+        UPDATE_CMD="sudo apt-get update -qq"
+        # Nombres de paquetes específicos para Debian/Ubuntu
+        PKG_7Z="p7zip-full"
+        PKG_BAT="bat" # Debian a veces requiere batcat, se maneja en ensure_bat
+    elif command -v dnf >/dev/null 2>&1; then
+        PM="dnf"
+        INSTALL_CMD="sudo dnf install -y"
+        UPDATE_CMD="sudo dnf check-update"
+        PKG_7Z="p7zip p7zip-plugins"
+        PKG_BAT="bat"
+    elif command -v pacman >/dev/null 2>&1; then
+        PM="pacman"
+        INSTALL_CMD="sudo pacman -S --noconfirm"
+        UPDATE_CMD="sudo pacman -Sy"
+        PKG_7Z="p7zip"
+        PKG_BAT="bat"
+    elif command -v brew >/dev/null 2>&1; then
+        PM="brew"
+        INSTALL_CMD="brew install"
+        UPDATE_CMD="brew update"
+        PKG_7Z="p7zip"
+        PKG_BAT="bat"
+    else
+        printf "${RED}❌ No se pudo detectar un gestor de paquetes soportado (apt, dnf, pacman, brew).${NC}\n"
+        exit 1
+    fi
+}
+
+# Ejecutar detección al inicio
+detect_package_manager
+
 # --- Funciones de Ayuda ---
 
 # Verifica si un comando existe. Si no, intenta instalarlo.
 ensure_command() {
     cmd="$1"
-    pkg="${2:-$1}" # Si se da un segundo argumento, es el nombre del paquete en apt
+    pkg="${2:-$1}" # Si se da un segundo argumento, es el nombre del paquete
     
     if ! command -v "$cmd" >/dev/null 2>&1; then
-        printf "${YELLOW}📦 Instalando $pkg...${NC}\n"
-        sudo apt-get update -qq >/dev/null 2>&1
-        sudo apt-get install -y -qq "$pkg"
+        printf "${YELLOW}📦 Instalando $pkg con $PM...${NC}\n"
+        # Ejecutar update solo la primera vez si es necesario (opcional, aquí simplificado)
+        if [ "$PM" = "apt-get" ]; then $UPDATE_CMD >/dev/null 2>&1; fi
+        
+        $INSTALL_CMD "$pkg"
     else
         printf "${GREEN}✅ $cmd ya está instalado.${NC}\n"
     fi
 }
 
-# Función especial para 'bat' que en Debian/Ubuntu se llama 'batcat'
+# Función especial para 'bat' (batcat en Debian/Ubuntu)
 ensure_bat() {
     if command -v bat >/dev/null 2>&1; then
         printf "${GREEN}✅ bat ya está instalado.${NC}\n"
     elif command -v batcat >/dev/null 2>&1; then
-        printf "${GREEN}✅ batcat ya está instalado. Creando enlace 'bat'...${NC}\n"
-        # Crear enlace simbólico seguro en ~/.local/bin
+        printf "${GREEN}✅ batcat ya está instalado. Verificando enlace...${NC}\n"
         mkdir -p "$HOME/.local/bin"
         ln -sf "$(which batcat)" "$HOME/.local/bin/bat"
     else
         printf "${YELLOW}📦 Instalando bat...${NC}\n"
-        sudo apt-get update -qq >/dev/null 2>&1
-        sudo apt-get install -y -qq bat
-        # Verificar si se instaló como batcat y enlazar
+        $INSTALL_CMD "$PKG_BAT"
+        
+        # Post-instalación para Debian/Ubuntu
         if command -v batcat >/dev/null 2>&1; then
              mkdir -p "$HOME/.local/bin"
              ln -sf "$(which batcat)" "$HOME/.local/bin/bat"
@@ -79,7 +116,11 @@ install_fish_config() {
     rm -f "$CONFIG_DIR/completions/fisher.fish" 2>/dev/null
 
     printf "${BLUE}🔌 Instalando plugins con Fisher...${NC}\n"
-    fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update"
+    if command -v fish >/dev/null 2>&1; then
+        fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update"
+    else
+         printf "${RED}⚠️ Fish no está instalado, no se pueden instalar plugins.${NC}\n"
+    fi
 
     # VERIFICACIÓN DE SHELL POR DEFECTO
     CURRENT_SHELL=$(grep "^$(whoami):" /etc/passwd | cut -d: -f7)
@@ -140,20 +181,41 @@ install_bash_config() {
 
 # --- INSTALACIÓN DE HERRAMIENTAS COMUNES ---
 install_tools() {
-    printf "\n${BLUE}🛠  Instalando herramientas modernas (Rust)...${NC}\n"
+    printf "\n${BLUE}🛠  Instalando herramientas y dependencias...${NC}\n"
+    
+    # Básicos
     ensure_command "git"
     ensure_command "curl"
+    
+    # Compresión (Para función 'extract')
+    printf "${BLUE}📦 Instalando utilidades de compresión...${NC}\n"
+    ensure_command "unzip"
+    ensure_command "unrar"
+    ensure_command "7z" "$PKG_7Z" # Usa la variable detectada (p7zip-full, p7zip, etc)
+
+    # Herramientas Modernas
+    printf "${BLUE}🚀 Instalando herramientas modernas (Rust)...${NC}\n"
     ensure_command "fzf"
     ensure_command "zoxide"
     ensure_command "rg" "ripgrep"
+    ensure_command "delta" "git-delta" # Git Delta para diffs bonitos
     ensure_bat  # Instala bat o batcat y lo vincula
     
-    # Eza es más nuevo, intentamos instalarlo, si falla no rompemos el script
+    # Eza (ls moderno)
     if ! command -v eza >/dev/null 2>&1; then
         printf "${YELLOW}📦 Intentando instalar eza (ls moderno)...${NC}\n"
-        sudo apt-get install -y -qq eza 2>/dev/null || printf "${RED}⚠️ No se pudo instalar 'eza' automáticamente (quizás tu distro es antigua). Se usará 'ls'.${NC}\n"
+        $INSTALL_CMD eza 2>/dev/null || printf "${RED}⚠️ No se pudo instalar 'eza' automáticamente (comprueba si tu repo lo tiene).${NC}\n"
     else
         printf "${GREEN}✅ eza ya está instalado.${NC}\n"
+    fi
+    
+    # Configuración de git para usar delta si se instaló
+    if command -v delta >/dev/null 2>&1; then
+        printf "${GREEN}⚙️  Configurando git para usar delta...${NC}\n"
+        git config --global core.pager "delta"
+        git config --global interactive.diffFilter "delta --color-only"
+        git config --global delta.navigate true
+        git config --global delta.light false
     fi
 }
 
@@ -161,6 +223,7 @@ install_tools() {
 clear
 printf "${BLUE}=========================================${NC}\n"
 printf "${BLUE}   INSTALADOR DE DOTFILES (Rowell)       ${NC}\n"
+printf "${BLUE}   Gestor detectado: $PM                 ${NC}\n"
 printf "${BLUE}=========================================${NC}\n"
 printf "Selecciona qué entorno deseas configurar:\n\n"
 printf "  ${GREEN}0)${NC} Bash (Personalizado + Tools)\n"
