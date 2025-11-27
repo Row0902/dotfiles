@@ -48,7 +48,7 @@ install_fish_config() {
     cp -r "$TEMP_DIR/fish/." "$CONFIG_DIR/"
     chmod -R 755 "$CONFIG_DIR/functions"
 
-    # Limpieza preventiva (aunque hayas limpiado el repo, esto protege contra re-instalaciones)
+    # Limpieza preventiva de conflictos de plugins
     rm -f "$CONFIG_DIR/functions/_fzf_"* 2>/dev/null
     rm -f "$CONFIG_DIR/functions/_autopair_"* 2>/dev/null
     rm -f "$CONFIG_DIR/functions/fisher.fish" 2>/dev/null
@@ -90,6 +90,14 @@ install_bash_config() {
     printf "${BLUE}📂 Instalando .bash_custom...${NC}\n"
     cp "$TEMP_DIR/bash/.bash_custom" "$BASH_CUSTOM_FILE"
     
+    # --- CORRECCIÓN CRÍTICA PARA DEBIAN/LINUX ---
+    # Elimina los retornos de carro (\r) que Windows agrega, evitando errores de sintaxis
+    if command -v sed >/dev/null 2>&1; then
+        sed -i 's/\r$//' "$BASH_CUSTOM_FILE"
+        printf "${GREEN}🔧 Formato de archivo corregido (Windows -> Unix).${NC}\n"
+    fi
+    # --------------------------------------------
+
     # Crear carpeta para completions extra si no existe
     mkdir -p "$HOME/.bash_completions_linux"
 
@@ -124,13 +132,13 @@ case "$opcion" in
         printf "\n${BLUE}🚀 Iniciando instalación de Fish...${NC}\n"
         ensure_command "git"
         ensure_command "fish"
-        ensure_command "fzf"  # <--- AQUÍ SE VERIFICA/INSTALA FZF
+        ensure_command "fzf"
         install_fish_config
         ;;
     0)
         printf "\n${BLUE}🚀 Iniciando instalación de Bash...${NC}\n"
         ensure_command "git"
-        ensure_command "fzf"  # <--- AQUÍ TAMBIÉN PARA BASH
+        ensure_command "fzf"
         install_bash_config
         ;;
     *)
