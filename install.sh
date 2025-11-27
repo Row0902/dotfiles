@@ -15,11 +15,14 @@ NC='\033[0m'
 
 # --- Funciones de Ayuda ---
 
+# Verifica si un comando existe. Si no, lo instala.
 ensure_command() {
     if ! command -v "$1" >/dev/null 2>&1; then
         printf "${YELLOW}📦 Instalando $1...${NC}\n"
         sudo apt-get update -qq >/dev/null 2>&1
         sudo apt-get install -y -qq "$1"
+    else
+        printf "${GREEN}✅ $1 ya está instalado.${NC}\n"
     fi
 }
 
@@ -35,18 +38,23 @@ install_fish_config() {
     ensure_command "curl"
     
     # Backup y Copia
-    if [ -d "$CONFIG_DIR" ]; then mv "$CONFIG_DIR" "${CONFIG_DIR}.backup.$(date +%s)"; fi
+    if [ -d "$CONFIG_DIR" ]; then 
+        printf "${YELLOW}🧹 Respaldando configuración anterior de Fish...${NC}\n"
+        mv "$CONFIG_DIR" "${CONFIG_DIR}.backup.$(date +%s)"
+    fi
     mkdir -p "$CONFIG_DIR"
+    
+    printf "${BLUE}📂 Copiando archivos de Fish...${NC}\n"
     cp -r "$TEMP_DIR/fish/." "$CONFIG_DIR/"
     chmod -R 755 "$CONFIG_DIR/functions"
 
-    # Limpieza de conflictos antes de Fisher
+    # Limpieza preventiva (aunque hayas limpiado el repo, esto protege contra re-instalaciones)
     rm -f "$CONFIG_DIR/functions/_fzf_"* 2>/dev/null
     rm -f "$CONFIG_DIR/functions/_autopair_"* 2>/dev/null
     rm -f "$CONFIG_DIR/functions/fisher.fish" 2>/dev/null
     rm -f "$CONFIG_DIR/completions/fisher.fish" 2>/dev/null
 
-    printf "${BLUE}🔌 Instalando plugins (z, fzf, etc)...${NC}\n"
+    printf "${BLUE}🔌 Instalando plugins con Fisher...${NC}\n"
     fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update"
 
     # VERIFICACIÓN DE SHELL POR DEFECTO
@@ -54,7 +62,7 @@ install_fish_config() {
     FISH_BIN=$(which fish)
 
     if [ "$CURRENT_SHELL" = "$FISH_BIN" ]; then
-        printf "${GREEN}✅ Fish ya es tu shell por defecto. No se requieren cambios.${NC}\n"
+        printf "${GREEN}✅ Fish ya es tu shell por defecto.${NC}\n"
     else
         printf "\n${YELLOW}❓ Configuración final:${NC}\n"
         printf "  ¿Deseas establecer Fish como tu terminal por defecto? (s/n): "
@@ -82,7 +90,7 @@ install_bash_config() {
     printf "${BLUE}📂 Instalando .bash_custom...${NC}\n"
     cp "$TEMP_DIR/bash/.bash_custom" "$BASH_CUSTOM_FILE"
     
-    # Crear carpeta para completions extra si no existe (para evitar errores en tu script)
+    # Crear carpeta para completions extra si no existe
     mkdir -p "$HOME/.bash_completions_linux"
 
     # Inyectar en .bashrc si no existe
@@ -106,8 +114,8 @@ printf "${BLUE}=========================================${NC}\n"
 printf "${BLUE}   INSTALADOR DE DOTFILES (Rowell)       ${NC}\n"
 printf "${BLUE}=========================================${NC}\n"
 printf "Selecciona qué entorno deseas configurar:\n\n"
-printf "  ${GREEN}0)${NC} Bash (Personalizado)\n"
-printf "  ${GREEN}1)${NC} Fish (Recomendado)\n\n"
+printf "  ${GREEN}0)${NC} Bash (Personalizado + FZF)\n"
+printf "  ${GREEN}1)${NC} Fish (Completo + FZF)\n\n"
 printf "Opción: "
 read opcion
 
@@ -116,11 +124,13 @@ case "$opcion" in
         printf "\n${BLUE}🚀 Iniciando instalación de Fish...${NC}\n"
         ensure_command "git"
         ensure_command "fish"
+        ensure_command "fzf"  # <--- AQUÍ SE VERIFICA/INSTALA FZF
         install_fish_config
         ;;
     0)
         printf "\n${BLUE}🚀 Iniciando instalación de Bash...${NC}\n"
         ensure_command "git"
+        ensure_command "fzf"  # <--- AQUÍ TAMBIÉN PARA BASH
         install_bash_config
         ;;
     *)
