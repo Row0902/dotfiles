@@ -113,5 +113,3 @@ gitinit() {
 if [ -f ~/.bash_completions_linux/row.sh ]; then
     source ~/.bash_completions_linux/row.sh
 fi
-
-echo "🚀 Entorno Bash Custom cargado correctamente."
