@@ -1,19 +1,39 @@
-#!/bin/sh
+#!/bin/bash
 
-# --- Configuración ---
+# ==============================================================================
+#  DOTFILES INSTALLER - PRODUCTION READY
+#  Repo: https://github.com/row0902/dotfiles
+# ==============================================================================
+
+# --- Configuración Global ---
+set -e  # Detener el script si hay un error
 REPO_URL="https://github.com/row0902/dotfiles.git"
 CONFIG_DIR="$HOME/.config/fish"
-TEMP_DIR="$HOME/tmp_dotfiles_installer"
+TEMP_DIR="$HOME/tmp_dotfiles_installer_$(date +%s)"
 BASH_CUSTOM_FILE="$HOME/.bash_custom"
 
-# Colores
+# Colores y Formato
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
-NC='\033[0m'
+NC='\033[0m' # No Color
 
-# --- 1. Detección ---
+# --- Helpers de Logging ---
+log_info() { printf "${BLUE}ℹ️  %s${NC}\n" "$1"; }
+log_success() { printf "${GREEN}✅ %s${NC}\n" "$1"; }
+log_warn() { printf "${YELLOW}⚠️  %s${NC}\n" "$1"; }
+log_error() { printf "${RED}❌ %s${NC}\n" "$1"; }
+
+# --- Limpieza Automática (Trap) ---
+cleanup() {
+    if [ -d "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR"
+    fi
+}
+trap cleanup EXIT
+
+# --- 1. Detección del Entorno ---
 detect_env() {
     ARCH=$(uname -m)
     case $ARCH in
@@ -22,6 +42,7 @@ detect_env() {
         *) LAZYGIT_ARCH="x86_64" ;; 
     esac
 
+    # Detectar Sistema Operativo
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         OS_NAME="${NAME:-Linux}"
@@ -31,24 +52,36 @@ detect_env() {
         OS_NAME="$(uname -s)"
     fi
 
+    # Determinar si necesitamos sudo
+    if [ "$EUID" -eq 0 ]; then
+        SUDO_CMD=""
+    else
+        if ! command -v sudo >/dev/null 2>&1; then
+            log_error "Este script requiere 'sudo' o ser ejecutado como root."
+            exit 1
+        fi
+        SUDO_CMD="sudo"
+    fi
+
+    # Detectar Gestor de Paquetes
     if command -v apt-get >/dev/null 2>&1; then
         PM="apt-get"
-        INSTALL_CMD="sudo apt-get install -y -qq"
-        UPDATE_CMD="sudo apt-get update -qq"
+        INSTALL_CMD="$SUDO_CMD apt-get install -y -qq"
+        UPDATE_CMD="$SUDO_CMD apt-get update -qq"
         PKG_7Z="p7zip-full"
         PKG_BAT="bat"
-        PKG_DEV="jq neovim tldr"
+        PKG_DEV="jq neovim tldr build-essential"
     elif command -v dnf >/dev/null 2>&1; then
         PM="dnf"
-        INSTALL_CMD="sudo dnf install -y"
-        UPDATE_CMD="sudo dnf check-update"
+        INSTALL_CMD="$SUDO_CMD dnf install -y"
+        UPDATE_CMD="$SUDO_CMD dnf check-update"
         PKG_7Z="p7zip p7zip-plugins"
         PKG_BAT="bat"
         PKG_DEV="jq neovim tldr"
     elif command -v pacman >/dev/null 2>&1; then
         PM="pacman"
-        INSTALL_CMD="sudo pacman -S --noconfirm"
-        UPDATE_CMD="sudo pacman -Sy"
+        INSTALL_CMD="$SUDO_CMD pacman -S --noconfirm"
+        UPDATE_CMD="$SUDO_CMD pacman -Sy"
         PKG_7Z="p7zip"
         PKG_BAT="bat"
         PKG_DEV="jq neovim tldr"
@@ -60,36 +93,38 @@ detect_env() {
         PKG_BAT="bat"
         PKG_DEV="jq neovim tldr"
     else
-        printf "${RED}❌ Error: Gestor de paquetes no soportado.${NC}\n"
+        log_error "Gestor de paquetes no soportado."
         exit 1
     fi
 }
 
+# --- Funciones Auxiliares ---
 ensure_command() {
-    cmd="$1"
-    pkg="${2:-$1}"
+    local cmd="$1"
+    local pkg="${2:-$1}"
     if ! command -v "$cmd" >/dev/null 2>&1; then
-        printf "${YELLOW}📦 Instalando $pkg...${NC}\n"
+        log_info "Instalando $pkg..."
+        # Actualizar repositorios solo la primera vez en apt
         if [ "$PM" = "apt-get" ] && [ -z "$APT_UPDATED" ]; then 
             $UPDATE_CMD >/dev/null 2>&1
             APT_UPDATED=true
         fi
-        $INSTALL_CMD "$pkg" >/dev/null 2>&1
+        $INSTALL_CMD "$pkg" >/dev/null 2>&1 || log_warn "Falló la instalación de $pkg (puede que no esté en los repos)."
     else
-        printf "${GREEN}✅ $cmd ya está instalado.${NC}\n"
+        log_success "$cmd ya está instalado."
     fi
 }
 
 ensure_bat() {
     if command -v bat >/dev/null 2>&1; then
-        printf "${GREEN}✅ bat ya está instalado.${NC}\n"
+        log_success "bat ya está instalado."
     elif command -v batcat >/dev/null 2>&1; then
         mkdir -p "$HOME/.local/bin"
         ln -sf "$(which batcat)" "$HOME/.local/bin/bat"
-        printf "${GREEN}✅ batcat enlazado como bat.${NC}\n"
+        log_success "batcat enlazado como bat."
     else
-        printf "${YELLOW}📦 Instalando bat...${NC}\n"
-        if [ "$PM" = "apt-get" ] && [ -z "$APT_UPDATED" ]; then $UPDATE_CMD >/dev/null 2>&1; APT_UPDATED=true; fi
+        log_info "Instalando bat..."
+        [ "$PM" = "apt-get" ] && [ -z "$APT_UPDATED" ] && { $UPDATE_CMD >/dev/null 2>&1; APT_UPDATED=true; }
         $INSTALL_CMD "$PKG_BAT" >/dev/null 2>&1
         if command -v batcat >/dev/null 2>&1; then
              mkdir -p "$HOME/.local/bin"
@@ -99,32 +134,32 @@ ensure_bat() {
 }
 
 add_line_to_file() {
-    line="$1"
-    file="$2"
+    local line="$1"
+    local file="$2"
     if [ -f "$file" ]; then
         if ! grep -Fq "$line" "$file"; then
             echo "" >> "$file"
             echo "$line" >> "$file"
-            printf "${GREEN}➕ Agregado a $(basename "$file")${NC}\n"
+            log_success "Agregado config a $(basename "$file")"
         fi
     fi
 }
 
 prepare_repo() {
-    if [ -d "$TEMP_DIR" ]; then rm -rf "$TEMP_DIR"; fi
-    printf "${BLUE}⬇️  Descargando dotfiles...${NC}\n"
-    git clone --quiet "$REPO_URL" "$TEMP_DIR"
+    if [ ! -d "$TEMP_DIR" ]; then
+        log_info "Descargando dotfiles..."
+        git clone --quiet "$REPO_URL" "$TEMP_DIR"
+    fi
 }
 
-# --- 2. INSTALACIÓN SHELL & CORE (Lo básico) ---
+# --- 2. INSTALACIÓN SHELL & CORE ---
 install_shell_core() {
-    printf "\n${BLUE}🛠  Configurando Shell y Herramientas Core...${NC}\n"
+    log_info "Configurando Core Tools..."
     
     ensure_command "git"
     ensure_command "curl"
     ensure_command "direnv"
     ensure_command "unzip"
-    ensure_command "unrar"
     ensure_command "7z" "$PKG_7Z"
     
     # Modern Stack
@@ -135,101 +170,109 @@ install_shell_core() {
     ensure_bat
     
     if [ -n "$PKG_DEV" ]; then
+        # shellcheck disable=SC2086
         $INSTALL_CMD $PKG_DEV >/dev/null 2>&1
     fi
 
+    # Eza (Puede fallar en repos viejos)
     if ! command -v eza >/dev/null 2>&1; then
-        printf "${YELLOW}📦 Instalando eza...${NC}\n"
-        $INSTALL_CMD eza >/dev/null 2>&1 || printf "${RED}⚠️ No se pudo instalar eza.${NC}\n"
+        log_info "Intentando instalar eza..."
+        $INSTALL_CMD eza >/dev/null 2>&1 || log_warn "No se pudo instalar eza automáticamente."
     fi
 
+    # Configuración Git Delta
     if command -v delta >/dev/null 2>&1; then
         git config --global core.pager "delta"
         git config --global interactive.diffFilter "delta --color-only"
         git config --global delta.navigate true
     fi
 
+    # Lazygit (Binario directo si falla package manager)
     if ! command -v lazygit >/dev/null 2>&1; then
         if [ "$PM" = "brew" ]; then
             brew install lazygit
         else
-            printf "${YELLOW}📦 Descargando Lazygit...${NC}\n"
+            log_info "Descargando Lazygit..."
             LG_VER=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
             curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LG_VER}_Linux_${LAZYGIT_ARCH}.tar.gz"
             tar xf lazygit.tar.gz lazygit
-            sudo install lazygit /usr/local/bin
+            $SUDO_CMD install lazygit /usr/local/bin
             rm lazygit lazygit.tar.gz
         fi
     fi
 
+    # Lazydocker
     if ! command -v lazydocker >/dev/null 2>&1; then
-        printf "${YELLOW}📦 Instalando Lazydocker...${NC}\n"
+        log_info "Instalando Lazydocker..."
         curl https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash >/dev/null 2>&1
     fi
 
+    # Atuin
     if ! command -v atuin >/dev/null 2>&1; then
-         printf "${YELLOW}📦 Instalando Atuin...${NC}\n"
+         log_info "Instalando Atuin..."
          curl --proto '=https' --tlsv1.2 -sSf https://setup.atuin.sh | sh >/dev/null 2>&1
     fi
 }
 
-# --- 3. INSTALACIÓN DEV STACK (Node, Python, Docker) ---
+# --- 3. INSTALACIÓN DEV STACK ---
 install_dev_stack() {
-    printf "\n${BLUE}🚀 Configurando Entorno de Desarrollo (Docker, Node, Python)...${NC}\n"
+    log_info "Configurando Entorno Dev (Node, Python, Docker)..."
 
-    # FNM
+    # FNM (Fast Node Manager)
     if ! command -v fnm >/dev/null 2>&1; then
-        printf "${YELLOW}📦 Instalando FNM...${NC}\n"
+        log_info "Instalando FNM..."
         curl -fsSL https://fnm.vercel.app/install | bash -s -- --install-dir "$HOME/.local/bin" --skip-shell
     else
-        printf "${GREEN}✅ FNM ya está instalado.${NC}\n"
+        log_success "FNM ya instalado."
     fi
 
-    # UV
+    # UV (Python Manager)
     if ! command -v uv >/dev/null 2>&1; then
-        printf "${YELLOW}📦 Instalando UV...${NC}\n"
+        log_info "Instalando UV..."
         curl -LsSf https://astral.sh/uv/install.sh | sh
     else
-        printf "${GREEN}✅ UV ya está instalado.${NC}\n"
+        log_success "UV ya instalado."
     fi
 
     # Docker
     if ! command -v docker >/dev/null 2>&1; then
-        printf "${YELLOW}🐳 Instalando Docker...${NC}\n"
+        log_info "Instalando Docker..."
         if [ "$OS_NAME" = "macOS" ]; then
-             printf "${RED}⚠️  En macOS instala Docker Desktop manualmente.${NC}\n"
+             log_warn "En macOS instala Docker Desktop manualmente."
         else
-             curl -fsSL https://get.docker.com | sudo sh
-             sudo usermod -aG docker $(whoami)
+             curl -fsSL https://get.docker.com | $SUDO_CMD sh
+             $SUDO_CMD usermod -aG docker "$(whoami)"
         fi
     else
-        printf "${GREEN}✅ Docker ya está instalado.${NC}\n"
+        log_success "Docker ya instalado."
     fi
 
-    # Zellij (Fix para sh)
+    # Zellij
     if ! command -v zellij >/dev/null 2>&1; then
-        printf "${YELLOW}📦 Instalando Zellij...${NC}\n"
-        if command -v cargo >/dev/null 2>&1; then
-            cargo install zellij --locked
-        else
-            curl -Lo /tmp/zellij_install.sh https://zellij.dev/launch
-            bash /tmp/zellij_install.sh --install >/dev/null 2>&1
-            rm /tmp/zellij_install.sh
-        fi
+        log_info "Instalando Zellij..."
+        bash <(curl -L https://zellij.dev/launch) --install >/dev/null 2>&1 || log_warn "Fallo instalación Zellij"
     fi
 }
 
 # --- 4. CONFIGURACIÓN FISH ---
 install_fish_config() {
+    ensure_command "fish"
     prepare_repo
-    if [ -d "$CONFIG_DIR" ]; then mv "$CONFIG_DIR" "${CONFIG_DIR}.backup.$(date +%s)"; fi
+    
+    if [ -d "$CONFIG_DIR" ]; then 
+        mv "$CONFIG_DIR" "${CONFIG_DIR}.backup.$(date +%s)"
+        log_info "Backup de config fish anterior creado."
+    fi
+    
     mkdir -p "$CONFIG_DIR"
     cp -r "$TEMP_DIR/fish/." "$CONFIG_DIR/"
     chmod -R 755 "$CONFIG_DIR/functions"
+    
+    # Limpieza
     rm -f "$CONFIG_DIR/functions/_fzf_"* 2>/dev/null
     rm -f "$CONFIG_DIR/functions/fisher.fish" 2>/dev/null
 
-    printf "${BLUE}🔌 Plugins Fisher...${NC}\n"
+    log_info "Instalando Plugins Fisher..."
     if command -v fish >/dev/null 2>&1; then
         fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update" >/dev/null 2>&1
         
@@ -238,17 +281,25 @@ install_fish_config() {
         add_line_to_file 'if type -q direnv; direnv hook fish | source; end' "$CFILE"
     fi
 
+    # Preguntar cambio de shell solo si es interactivo
     FISH_BIN=$(which fish)
     if [ "$SHELL" != "$FISH_BIN" ] && [ -n "$FISH_BIN" ]; then
-        printf "\n${YELLOW}❓ ¿Usar Fish como default? (s/n): ${NC}"
-        read choice
-        if [ "$choice" = "s" ]; then
-             if ! grep -q "$FISH_BIN" /etc/shells; then echo "$FISH_BIN" | sudo tee -a /etc/shells >/dev/null; fi
+        local change_shell="n"
+        # Si NO hay argumentos (modo interactivo), preguntamos
+        if [ $# -eq 0 ]; then
+             printf "\n${YELLOW}❓ ¿Usar Fish como default? (s/n): ${NC}"
+             # FIX CRÍTICO: Leer de /dev/tty para soportar tuberías
+             read -r change_shell < /dev/tty
+        elif [ "$1" == "--auto" ]; then
+             change_shell="s"
+        fi
+
+        if [ "$change_shell" = "s" ]; then
+             if ! grep -q "$FISH_BIN" /etc/shells; then echo "$FISH_BIN" | $SUDO_CMD tee -a /etc/shells >/dev/null; fi
              chsh -s "$FISH_BIN"
-             printf "${GREEN}✅ Reinicia tu sesión.${NC}\n"
+             log_success "Shell cambiada a Fish. Reinicia tu sesión."
         fi
     fi
-    rm -rf "$TEMP_DIR"
 }
 
 # --- 5. CONFIGURACIÓN BASH ---
@@ -264,23 +315,35 @@ install_bash_config() {
         echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$HOME/.bashrc"
     fi
 
+    # Integraciones Bash
     add_line_to_file '[[ -f ~/.atuin/bin/env ]] && source ~/.atuin/bin/env' "$HOME/.bashrc"
     add_line_to_file 'if command -v atuin >/dev/null; then eval "$(atuin init bash)"; fi' "$HOME/.bashrc"
     add_line_to_file 'if command -v direnv >/dev/null; then eval "$(direnv hook bash)"; fi' "$HOME/.bashrc"
-    
     add_line_to_file 'if command -v fnm >/dev/null; then eval "$(fnm env --use-on-cd)"; fi' "$HOME/.bashrc"
     add_line_to_file 'if command -v uv >/dev/null; then eval "$(uv generate-shell-completion bash)"; fi' "$HOME/.bashrc"
 
-    rm -rf "$TEMP_DIR"
-    printf "${GREEN}🎉 Bash listo.${NC}\n"
+    log_success "Bash configurado."
 }
 
-# --- MAIN MENU ---
+# --- MAIN FLOW ---
 detect_env
-USER_NAME=$(whoami)
 
+# Argument Parsing (Modo Automatizado)
+if [ $# -gt 0 ]; then
+    case "$1" in
+        --fish) install_shell_core; install_fish_config --auto ;;
+        --bash) install_shell_core; install_bash_config ;;
+        --dev)  install_dev_stack ;;
+        --full) install_shell_core; install_dev_stack; install_fish_config --auto ;;
+        *) log_error "Opción desconocida: $1"; exit 1 ;;
+    esac
+    exit 0
+fi
+
+# Modo Interactivo (Menú)
+USER_NAME=$(whoami)
 printf "\n${BLUE}=================================================${NC}\n"
-printf "${BLUE}   DOTFILES INSTALLER v5.1 (Final)               ${NC}\n"
+printf "${BLUE}   DOTFILES INSTALLER v6.0 (Production Ready)    ${NC}\n"
 printf "${BLUE}   👋 $USER_NAME | 💻 $OS_NAME | 📦 $PM ${NC}\n"
 printf "${BLUE}=================================================${NC}\n"
 
@@ -290,12 +353,14 @@ printf "  ${GREEN}2)${NC} 🐚 Configurar Solo Bash Shell (Incluye Core Tools)\n
 printf "  ${GREEN}3)${NC} 🛠️  Instalar Solo Entorno Dev (Docker, Node, Python)\n"
 printf "  ${GREEN}4)${NC} 🚀 Instalación Completa (Fish + Dev Stack)\n"
 printf "Opción: "
-read opcion
+
+# FIX CRÍTICO: Forzar lectura desde la terminal real
+read -r opcion < /dev/tty
 
 case "$opcion" in
     1) install_shell_core; install_fish_config ;;
     2) install_shell_core; install_bash_config ;;
     3) install_dev_stack ;;
     4) install_shell_core; install_dev_stack; install_fish_config ;;
-    *) echo "Opción inválida."; exit 1 ;;
+    *) log_error "Opción inválida."; exit 1 ;;
 esac
