@@ -12,10 +12,6 @@ fish_add_path -p /opt/homebrew/bin # macOS
 fish_add_path -p /home/linuxbrew/.linuxbrew/bin # Linuxbrew
 
 
-# Atuin
-if type -q atuin
-    atuin init fish | source
-end
 
 # Direnv
 if type -q direnv
