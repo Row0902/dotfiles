@@ -13,5 +13,6 @@ if set -q DIRENV_PATH
         end
     end
 
+    direnv hook fish | source
     alias dv='direnv'
 end
