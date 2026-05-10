@@ -1,0 +1,30 @@
+[core]
+    pager = delta
+    editor = code --wait
+    autocrlf = input
+    filemode = false 
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true    
+    side-by-side = true
+    line-numbers = true
+    theme = Monokai Extended Bright
+
+[alias]
+    st = status
+    cm = commit -m
+    br = branch
+    lg = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)' --all
+    f = "!git ls-files | fd"
+
+[init]
+    defaultBranch = main
+
+[push]
+    autoSetupRemote = true
+
+[include]
+    path = ~/.gitconfig.local
