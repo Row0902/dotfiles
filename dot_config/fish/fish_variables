@@ -1,0 +1,5 @@
+# This file contains fish universal variable definitions.
+# VERSION: 3.0
+SETUVAR __fish_initialized:4300
+SETUVAR _fisher_upgraded_to_4_4:\x1d
+SETUVAR fish_user_paths:/home/Row/\x2eopencode/bin\x1e/home/linuxbrew/\x2elinuxbrew/bin\x1e/home/Row/go/bin\x1e/home/Row/\x2ebun/bin\x1e/home/Row/\x2ecargo/bin\x1e/home/Row/\x2elocal/bin

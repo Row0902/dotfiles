@@ -1,0 +1,7 @@
+{{ if ne .chezmoi.os "linux" }}
+dot_config/fish/**
+{{ end }}
+
+{{ if ne .chezmoi.os "windows" }}
+Documents/PowerShell/**
+{{ end }}

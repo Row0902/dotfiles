@@ -1,8 +1,21 @@
 [core]
     pager = delta
     editor = code --wait
+{{ if eq .chezmoi.os "windows" }}
+    autocrlf = true
+    filemode = false
+[safe]
+    directory = "*"
+{{ else }}
     autocrlf = input
-    filemode = false 
+    filemode = true
+{{ end }}
+
+[init]
+    defaultBranch = main
+
+[push]
+    autoSetupRemote = true
 
 [interactive]
     diffFilter = delta --color-only
@@ -19,12 +32,6 @@
     br = branch
     lg = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)' --all
     f = "!git ls-files | fd"
-
-[init]
-    defaultBranch = main
-
-[push]
-    autoSetupRemote = true
 
 [include]
     path = ~/.gitconfig.local

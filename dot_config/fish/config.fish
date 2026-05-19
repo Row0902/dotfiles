@@ -10,3 +10,5 @@ fish_add_path -p ~/.bun/bin
 fish_add_path -p ~/go/bin
 fish_add_path -p /opt/homebrew/bin # macOS
 fish_add_path -p /home/linuxbrew/.linuxbrew/bin # Linuxbrew
+# opencode
+fish_add_path /home/Row/.opencode/bin
