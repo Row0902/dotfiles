@@ -1,5 +1,5 @@
 {{ if ne .chezmoi.os "linux" }}
-dot_config/fish/**
+.config/fish/**
 {{ end }}
 
 {{ if ne .chezmoi.os "windows" }}
