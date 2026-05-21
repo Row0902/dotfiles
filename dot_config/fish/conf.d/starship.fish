@@ -7,7 +7,7 @@ else if type -q starship
 end
 
 if set -q STARSHIP_PATH
-    if test -n STARSHIP_PATH
+    if test -n "$STARSHIP_PATH"
         if not contains "$STARSHIP_PATH" $PATH
             set -gx PATH "$STARSHIP_PATH" $PATH
         end
