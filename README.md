@@ -17,83 +17,60 @@ Configuraciones personales gestionadas con [chezmoi](https://www.chezmoi.io/).
 
 ## Onboarding (nueva máquina)
 
-### 1. Instalar Fish
+### Comando único (mínimo)
 
 ```sh
-# Ubuntu/Debian
-sudo apt update && sudo apt install -y fish
-
-# Fedora
-sudo dnf install -y fish
-
-# macOS
-brew install fish
-
-# Hacer Fish el shell por defecto (requiere contraseña)
-chsh -s "$(which fish)"
+sh -c "$(curl -fsLS https://get.chezmoi.io)" -- init --apply https://github.com/Row0902/dotfiles.git
 ```
 
-### 2. Instalar chezmoi
+Esto clona el repo, aplica todas las configuraciones y te pregunta:
+- Tu nombre, email y GPG signing key (para `~/.gitconfig.local`)
+
+Después de eso ya tenés los dotfiles funcionando.
+
+### Bootstrap completo (opcional, recomendado)
+
+Para instalar todas las herramientas y configurar SSH automáticamente:
 
 ```sh
-sh -c "$(curl -fsLS https://get.chezmoi.io)"
+~/.local/share/chezmoi/scripts/bootstrap.sh
 ```
 
-Esto instala chezmoi en `~/.local/bin/chezmoi` y te muestra los siguientes pasos.
-
-### 3. Inicializar con este repo
+O si estás en el directorio del repo:
 
 ```sh
-~/.local/bin/chezmoi init git@github.com:Row0902/dotfiles.git -v
+cd ~/.local/share/chezmoi && ./scripts/bootstrap.sh
 ```
 
-Esto clona el repo en `~/.local/share/chezmoi/` y descarga todas las configuraciones.
+El script es **interactivo e idempotente** — podés correrlo de nuevo si algo falla.
 
-### 4. Aplicar configuraciones
+### Qué hace bootstrap.sh
 
-```sh
-~/.local/bin/chezmoi apply -v
+| Fase | Qué hace |
+|------|----------|
+| 1 | Instala Homebrew si no está, ejecuta `brew bundle` con el Brewfile |
+| 2 | Configura `~/.gitconfig.local` con nombre, email y signing key |
+| 3 | Cambia el shell a Fish (`chsh`) |
+| 4 | Detecta/importa/genera claves SSH (incluye WSL → Windows) |
+| 5 | Autentica `gh` CLI |
+| 6 | Cambia remote del repo de HTTPS a SSH |
+
+### Detalles por fase
+
+#### Herramientas que instala brew bundle
+
+```
+fish starship eza bat fd ripgrep fzf zoxide atuin direnv
+git-delta gh lazygit uv fnm zellij
 ```
 
-Esto crea (o actualiza) todos los dotfiles en tu home:
-- `~/.config/fish/` — config, functions, abbreviations
-- `~/.config/starship.toml` — prompt
-- `~/.gitconfig` — config de git
+#### SSH Key Detection
 
-### 5. (Opcional) Instalar herramientas complementarias
+El script busca claves privadas en este orden:
 
-Para tener la experiencia completa, instalá las herramientas que el prompt y los aliases esperan:
-
-```sh
-# Ubuntu/Debian
-sudo apt install -y eza bat ripgrep fzf
-
-# Starship
-curl -sS https://starship.rs/install.sh | sh
-
-# Zoxide
-curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
-
-# Delta
-cargo install git-delta
-
-# FZF (fuzzy finder)
-sudo apt install -y fzf
-
-# LazyGit
-LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": "v\K[^"]*')
-curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
-tar xf lazygit.tar.gz lazygit
-sudo install lazygit /usr/local/bin
-```
-
-### One-liner completo (todo en uno)
-
-Si preferís un solo comando que instale chezmoi, clone y aplique:
-
-```sh
-sh -c "$(curl -fsLS https://get.chezmoi.io)" -- init --apply git@github.com:Row0902/dotfiles.git
-```
+1. `~/.ssh/` → si hay, pregunta si usarlas
+2. Si estás en WSL → busca en `/mnt/c/Users/<tu-user>/.ssh/` y ofrece importar
+3. Si no hay nada → ofrece generar una nueva ed25519 y agregarla a GitHub vía `gh`
 
 ## Lo que incluye
 
@@ -104,6 +81,11 @@ sh -c "$(curl -fsLS https://get.chezmoi.io)" -- init --apply git@github.com:Row0
 | `~/.config/fish/functions/*.fish` | Funciones útiles (mkcd, extract, fkill, ports, etc.) |
 | `~/.config/starship.toml` | Prompt two-line con os, direnv, git, status |
 | `~/.gitconfig` | Git config con delta, zdiff3, histogram, aliases |
+| `~/.gitconfig.local` | Identidad local (name, email, signing key) — generado por template |
+| `~/.config/direnv/direnv.toml` | Config de direnv (log, strict mode) |
+| `~/.config/direnv/direnvrc` | Layout functions (uv, venv, virtualenv) |
+| `Brewfile` | Catálogo de tools para brew bundle |
+| `scripts/bootstrap.sh` | Script interactivo de bootstrap completo |
 
 ## Personalización local
 
@@ -112,9 +94,14 @@ No modifiques los archivos directamente en `~/.config/` — se sobrescriben en e
 En cambio:
 
 ```sh
-# Sobre-escribir config de git local (NO trackeado)
-~/.config/git/config.local
+# Identidad git (name, email, signing key) — NO trackeado en el repo
+chezmoi apply ~/.gitconfig.local
 
+# Config local adicional
+vim ~/.gitconfig.local
+```
+
+```sh
 # Editar archivos en el source
 chezmoi edit ~/.config/fish/conf.d/mis-aliases.fish
 
