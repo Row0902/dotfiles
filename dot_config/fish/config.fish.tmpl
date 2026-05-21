@@ -1,0 +1,22 @@
+if status is-interactive
+    # Suprimir el mensaje de bienvenida de Fish
+    set -g fish_greeting ""
+    # Límite de entradas en el historial
+    set -g fish_history_max_entries 20000
+end
+
+# PATH: bins locales siempre disponibles
+fish_add_path -p ~/.local/bin
+fish_add_path -p ~/.cargo/bin
+fish_add_path -p ~/.bun/bin
+fish_add_path -p ~/go/bin
+
+# PATH: Homebrew según plataforma
+{{ if eq .chezmoi.os "darwin" -}}
+fish_add_path -p /opt/homebrew/bin
+{{- else if eq .chezmoi.os "linux" -}}
+fish_add_path -p /home/linuxbrew/.linuxbrew/bin
+{{- end }}
+
+# opencode
+fish_add_path {{ .chezmoi.homeDir }}/.opencode/bin
