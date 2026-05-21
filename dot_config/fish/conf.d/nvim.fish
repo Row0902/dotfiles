@@ -1,4 +1,4 @@
 if type -q nvim
-    alias vim 'nvim'
-    alias vi 'nvim'
+    abbr -g vim nvim
+    abbr -g vi nvim
 end

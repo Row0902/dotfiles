@@ -12,5 +12,5 @@ if set -q BAT_PATH
         end
     end
 
-     alias cat 'bat'
+     abbr -g cat bat
 end

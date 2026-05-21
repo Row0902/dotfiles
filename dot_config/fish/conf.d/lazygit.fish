@@ -13,5 +13,5 @@ if set -q LAZYGIT_PATH
         end
     end
 
-    alias lg='lazygit'
+    abbr -g lg lazygit
 end

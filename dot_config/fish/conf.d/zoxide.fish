@@ -13,6 +13,5 @@ if set -q ZOXIDE_PATH
         end
     end
 
-    zoxide init fish | source
-    alias cd='z'
+    zoxide init fish --cmd cd | source
 end
