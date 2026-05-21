@@ -1,0 +1,45 @@
+# ─── Python layout functions for direnv ────────────────────────────────
+#
+# Elegí una en tu .envrc:
+#   layout uv          → uv (rápido, lock file, recomendado)
+#   layout venv        → python -m venv (built-in, sin dependencias)
+#   layout virtualenv  → virtualenv (requiere pip install virtualenv)
+#
+# Todas crean .venv si no existe, exportan VIRTUAL_ENV para Starship,
+# y agregan el bin al PATH (todo reversible al salir del directorio).
+
+# ── uv (recomendado) ──────────────────────────────────────────────────
+
+layout_uv() {
+    if ! [ -f .venv/bin/python ]; then
+        uv venv
+    fi
+
+    VIRTUAL_ENV="$PWD/.venv"
+    export VIRTUAL_ENV
+    PATH_add "$VIRTUAL_ENV/bin"
+}
+
+# ── python -m venv (built-in, sin dependencias) ───────────────────────
+
+layout_venv() {
+    if ! [ -f .venv/bin/python ]; then
+        python -m venv .venv
+    fi
+
+    VIRTUAL_ENV="$PWD/.venv"
+    export VIRTUAL_ENV
+    PATH_add "$VIRTUAL_ENV/bin"
+}
+
+# ── virtualenv (requiere pip install virtualenv) ──────────────────────
+
+layout_virtualenv() {
+    if ! [ -f .venv/bin/python ]; then
+        virtualenv .venv
+    fi
+
+    VIRTUAL_ENV="$PWD/.venv"
+    export VIRTUAL_ENV
+    PATH_add "$VIRTUAL_ENV/bin"
+}

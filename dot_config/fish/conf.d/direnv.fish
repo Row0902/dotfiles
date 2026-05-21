@@ -14,5 +14,5 @@ if set -q DIRENV_PATH
     end
 
     direnv hook fish | source
-    alias dv='direnv'
+    abbr -g dv direnv
 end
