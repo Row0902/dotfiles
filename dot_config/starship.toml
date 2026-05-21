@@ -70,6 +70,7 @@ format = "[ $symbol($version)]($style)"
 symbol = ""
 style = "fg:#769ff0"
 format = '[ $symbol($version)(\($venv\))]($style)'
+generic_venv_names = [".venv", "venv"]
 
 [rust]
 symbol = ""
@@ -95,8 +96,9 @@ format = "[tardó 祥 $duration]($style)"
 [status]
 disabled = false
 format = "[$symbol $status]($style)"
-style = "fg:red"
 success_symbol = ""
+success_style = ""
+failure_style = "fg:red"
 
 [character]
 success_symbol = "[➜](fg:#769ff0)"
