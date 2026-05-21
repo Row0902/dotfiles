@@ -13,5 +13,5 @@ if set -q OPENCODE_PATH
         end
     end
 
-    alias oc='opencode'
+    abbr -g oc opencode
 end

@@ -2,7 +2,7 @@ set -l brew_bat "/home/linuxbrew/.linuxbrew/bin"
 if test -d "$brew_bat"
     set -gx BAT_PATH "$brew_bat"
 else if type -q bat
-    BAT_PATH ""
+    set -gx BAT_PATH ""
 end
 
 if set -q BAT_PATH
@@ -12,5 +12,5 @@ if set -q BAT_PATH
         end
     end
 
-     abbr -g cat bat
+    alias cat='bat'
 end
