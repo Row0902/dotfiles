@@ -1,4 +1,4 @@
-# Alias Básicos del Sistema
-alias cls='clear'
-alias ..='cd ..'
-alias .fish='source ~/.config/fish/config.fish'
+# Abbreviaturas básicas del sistema
+abbr -g cls clear
+abbr -g .. 'cd ..'
+abbr -g .fish 'source ~/.config/fish/config.fish'

@@ -14,10 +14,10 @@ if set -q DOCKER_PATH
         end
     end
 
-    alias dk='docker'
-    alias dkps='docker ps'
-    alias dksp='docker system prune'
-    alias dkncr='docker network create'
-    alias dknl='docker network ls'
-    alias dknct='docker network connect'
+    abbr -g dk docker
+    abbr -g dkps 'docker ps'
+    abbr -g dksp 'docker system prune'
+    abbr -g dkncr 'docker network create'
+    abbr -g dknl 'docker network ls'
+    abbr -g dknct 'docker network connect'
 end
