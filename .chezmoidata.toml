@@ -1,0 +1,13 @@
+[brew]
+prefix_darwin = "/opt/homebrew"
+prefix_linux = "/home/linuxbrew/.linuxbrew"
+
+[editor]
+command = "code --wait"
+diff = "nvim -d"
+
+[git]
+default_branch = "main"
+
+[os]
+config_dir = ".config"

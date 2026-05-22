@@ -1,0 +1,15 @@
+[git]
+    autoAdd = true
+    autoCommit = true
+    autoPush = false
+    commitMessageTemplate = "chore: sync dotfiles"
+
+[diff]
+    pager = "delta"
+
+[merge]
+    command = "vimdiff"
+    args = ["-d", "{{ .Destination }}", "{{ .Source }}", "{{ .Target }}"]
+
+[interpreters]
+    ps1 = { command = "pwsh", args = ["-NoLogo", "-NoProfile", "-File"] }
