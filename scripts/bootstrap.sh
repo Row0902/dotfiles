@@ -47,19 +47,30 @@ echo -e "${BOLD}
 # FASE 1: Homebrew
 # ═══════════════════════════════════════════════════════════════════════
 
-info "Fase 1/6: Homebrew y tools"
+phase_1_install_tools() {
+    info "Phase 1: Installing tools"
 
-if ! command -v brew &>/dev/null; then
-    info "Instalando Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    ok "Homebrew instalado"
-else
-    ok "Homebrew ya instalado"
-fi
+    # Si run_once_ ya instaló (chezmoi apply ejecutado antes), skip
+    if command -v fish &>/dev/null && command -v starship &>/dev/null; then
+        info "Tools already installed (run_once_ completed), skipping Phase 1"
+        return 0
+    fi
 
-info "Instalando tools via brew bundle..."
-brew bundle --file "$REPO_DIR/Brewfile" --no-lock || warn "brew bundle tuvo issues (podés re-ejecutarlo)"
-ok "Tools instaladas"
+    # Fallback: correr brew bundle si estamos antes del primer apply
+    if ! command -v brew &>/dev/null; then
+        info "Instalando Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        ok "Homebrew instalado"
+    else
+        ok "Homebrew ya instalado"
+    fi
+
+    info "Instalando tools via brew bundle..."
+    brew bundle --file "$REPO_DIR/Brewfile" --no-lock || warn "brew bundle tuvo issues (podés re-ejecutarlo)"
+    ok "Tools instaladas"
+}
+
+phase_1_install_tools
 
 # ═══════════════════════════════════════════════════════════════════════
 # FASE 2: Git identidad local

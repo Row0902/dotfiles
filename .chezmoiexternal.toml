@@ -1,0 +1,13 @@
+[".local/bin/delta"]
+    type = "archive-file"
+    url = "https://github.com/dandavison/delta/releases/download/0.18.2/delta-0.18.2-{{ if eq .chezmoi.os "linux" -}}x86_64-unknown-linux-musl{{- else if eq .chezmoi.os "darwin" -}}aarch64-apple-darwin{{- else }}{{ fail "unsupported OS" }}{{ end }}.tar.gz"
+    path = "delta/delta"
+    executable = true
+    refreshPeriod = "168h"
+
+[".local/bin/starship"]
+    type = "archive-file"
+    url = "https://github.com/starship/starship/releases/download/v1.22.1/starship-{{ if eq .chezmoi.os "linux" -}}x86_64-unknown-linux-musl{{- else if eq .chezmoi.os "darwin" -}}aarch64-apple-darwin{{- else }}{{ fail "unsupported OS" }}{{ end }}.tar.gz"
+    path = "starship/starship"
+    executable = true
+    refreshPeriod = "168h"
