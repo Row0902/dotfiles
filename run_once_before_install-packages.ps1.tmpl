@@ -1,6 +1,10 @@
+#!/bin/sh
 # chezmoi: run_once_before_install-packages.ps1.tmpl
 # Instala packages via winget en Windows
-
+{{ if ne .chezmoi.os "windows" -}}
+# Not on Windows — skip
+exit 0
+{{ end -}}
 $packages = @(
     "Git.Git",
     "Microsoft.PowerShell",
