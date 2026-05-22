@@ -1,0 +1,8 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $data := fromIni .chezmoi.stdin -}}
+{{- $user := $data.user | default dict -}}
+{{- $_ := set $user "name" (promptStringOnce . "git_user_name" "Your full name") -}}
+{{- $_ := set $user "email" (promptStringOnce . "git_user_email" "Your email") -}}
+{{- $_ := set $user "signingkey" (promptStringOnce . "git_signingkey" "Your signing key (leave empty if none)") -}}
+{{- $_ := set $data "user" $user -}}
+{{- toIni $data -}}
