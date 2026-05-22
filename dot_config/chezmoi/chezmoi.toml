@@ -1,0 +1,26 @@
+[git]
+    autoAdd = true
+    autoCommit = true
+    autoPush = false
+    commitMessageTemplate = "chore: sync dotfiles"
+
+[diff]
+    pager = "delta"
+
+[merge]
+    command = "vimdiff"
+    args = ["-d", "{{ .Destination }}", "{{ .Source }}", "{{ .Target }}"]
+
+# Interpreters.ps1 no declarado explícitamente para que chezmoi maneje
+# el auto-fallback: pwsh → powershell.exe en Windows, pwsh en Unix.
+# Ver https://chezmoi.io/reference/configuration-file/interpreters/
+
+# Encripción age para archivos sensibles.
+# Descomentar después de generar la clave:
+#   chezmoi age-keygen --output=~/.config/chezmoi/key.txt
+# y copiar la public key como recipient.
+#
+# encryption = "age"
+# [age]
+#     identity = "~/.config/chezmoi/key.txt"
+#     recipient = "age1..."

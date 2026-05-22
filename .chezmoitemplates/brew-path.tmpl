@@ -1,0 +1,5 @@
+{{- if eq .chezmoi.os "darwin" -}}
+{{ .brew.prefix_darwin }}
+{{- else if eq .chezmoi.os "linux" -}}
+{{ .brew.prefix_linux }}
+{{- end -}}

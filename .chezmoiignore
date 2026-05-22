@@ -8,3 +8,7 @@ Documents/PowerShell/**
 
 # Auto-generado por Fish — no trackear
 .config/fish/fish_variables
+
+# OS-specific run_once scripts
+{{ if eq .chezmoi.os "windows" }}run_once_*.sh{{ end }}
+{{ if ne .chezmoi.os "windows" }}run_once_*.ps1{{ end }}

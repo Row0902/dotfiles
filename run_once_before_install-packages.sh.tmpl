@@ -1,0 +1,14 @@
+#!/bin/bash
+# chezmoi: run_once_before_install-packages.sh.tmpl
+# Instala packages via brew bundle en Linux/macOS
+
+set -euo pipefail
+
+if command -v brew &>/dev/null; then
+    echo "📦 Installing Brewfile packages..."
+    brew bundle --file="{{ .chezmoi.sourceDir }}/Brewfile" --no-lock || true
+else
+    echo "⚠️  Homebrew not found — skipping package installation"
+    echo "   Install brew manually or run scripts/bootstrap.sh"
+    exit 0
+fi

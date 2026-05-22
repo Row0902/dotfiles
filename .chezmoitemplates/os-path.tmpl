@@ -1,0 +1,3 @@
+{{- if or (eq .chezmoi.os "linux") (eq .chezmoi.os "darwin") -}}
+{{ .chezmoi.homeDir }}/{{ .os.config_dir }}
+{{- end -}}

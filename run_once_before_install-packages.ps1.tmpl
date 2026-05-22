@@ -1,0 +1,25 @@
+# chezmoi: run_once_before_install-packages.ps1.tmpl
+# Instala packages via winget en Windows
+
+$packages = @(
+    "Git.Git",
+    "Microsoft.PowerShell",
+    "Neovim.Neovim",
+    "starship.starship",
+    "eza-community.eza",
+    "BurntSushi.ripgrep.MSVC",
+    "junegunn.fzf",
+    "sharkdp.bat",
+    "dandavison.delta"
+)
+
+$winget = Get-Command winget -ErrorAction SilentlyContinue
+if (-not $winget) {
+    Write-Warning "winget not found — skipping package installation"
+    exit 0
+}
+
+foreach ($pkg in $packages) {
+    Write-Host "Installing $pkg..."
+    & winget install --id $pkg --silent --accept-package-agreements
+}
