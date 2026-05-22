@@ -71,7 +71,6 @@ format = "[ $symbol($version)]($style)"
 symbol = ""
 style = "fg:#769ff0"
 format = '[ $symbol($version)(\($venv\))]($style)'
-generic_venv_names = [".venv", "venv"]
 
 [rust]
 symbol = ""
