@@ -10,10 +10,9 @@
 # Hace:
 #   1. Scoop + tools (instala todas las tools del listado)
 #   2. Git identidad local (name, email) si no existe .gitconfig.local
-#   3. Fish shell (vía Scoop + info de Windows Terminal)
-#   4. Detecta / genera claves SSH + ssh-agent
-#   5. gh auth login
-#   6. Cambia remote a SSH
+#   3. Detecta / genera claves SSH + ssh-agent
+#   4. gh auth login
+#   5. Cambia remote a SSH
 #
 # Es IDEMPOTENTE — podés correrlo varias veces sin romper nada.
 # ────────────────────────────────────────────────────────────────────────
@@ -60,9 +59,9 @@ function Install-ScoopAndTools {
 
     # Tools to install
     $scoopPackages = @(
-        "fish", "starship", "eza", "bat", "fd", "ripgrep",
-        "fzf", "zoxide", "atuin", "direnv", "delta", "gh",
-        "lazygit", "uv", "fnm", "zellij"
+        "starship", "eza", "bat", "fd", "ripgrep",
+        "fzf", "zoxide", "atuin", "delta", "gh",
+        "lazygit", "uv", "fnm"
     )
 
     foreach ($pkg in $scoopPackages) {
@@ -109,25 +108,7 @@ function Set-GitIdentity {
 }
 
 # ═══════════════════════════════════════════════════════════════════════
-# FASE 3: Fish shell
-# ═══════════════════════════════════════════════════════════════════════
-
-function Install-FishShell {
-    Write-BootstrapInfo "Phase 3: Fish shell"
-
-    if (Get-Command "fish" -ErrorAction SilentlyContinue) {
-        Write-BootstrapOk "Fish ya instalado"
-    } else {
-        Write-BootstrapInfo "Instalando Fish via Scoop..."
-        scoop install fish 2>&1 | Out-Null
-        Write-BootstrapOk "Fish instalado"
-    }
-
-    Write-BootstrapInfo "Fish instalado. Agregalo como shell default en Windows Terminal: Settings → Startup → Default profile"
-}
-
-# ═══════════════════════════════════════════════════════════════════════
-# FASE 4: SSH
+# FASE 3: SSH
 # ═══════════════════════════════════════════════════════════════════════
 
 function Setup-SSHKeys {
@@ -275,7 +256,6 @@ if (-not $isAdmin) {
 # Run phases
 Install-ScoopAndTools
 Set-GitIdentity
-Install-FishShell
 $shouldSetupRemote = Setup-SSHKeys
 Setup-GitHubAuth
 Convert-ToSshRemote -setupRemote $shouldSetupRemote -repoDir $script:RepoDir
@@ -284,5 +264,5 @@ Write-Host ""
 Write-Host "✓ Bootstrap completo." -ForegroundColor Green
 Write-Host ""
 Write-Host "  Recordá:"
-Write-Host "  • Configurá Fish como shell default en Windows Terminal"
+Write-Host "  • Herramientas Unix como fish, direnv, zellij no se instalan en Windows — usá WSL"
 Write-Host "  • Cualquier fase podés re-ejecutarla con: $PSCommandPath"
