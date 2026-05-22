@@ -8,6 +8,11 @@ diff = "nvim -d"
 
 [git]
 default_branch = "main"
+# Configurar localmente en chezmoi.toml: [data] git.user_name = "Tu Nombre"
+# O generar con chezmoi init usando .chezmoi.toml.tmpl
+user_name = ""
+user_email = ""
+signingkey = ""
 
 [os]
 config_dir = ".config"

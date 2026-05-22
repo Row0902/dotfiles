@@ -1,7 +1,6 @@
 [user]
-    name = {{ promptOnce "name" "Your full name" }}
-    email = {{ promptOnce "email" "Your email" }}
-{{ $key := promptOnce "signingkey" "Your GPG signing key (leave empty if none)" -}}
-{{ if $key -}}
-    signingkey = {{ $key }}
-{{ end -}}
+    name = {{ .git.user_name | quote }}
+    email = {{ .git.user_email | quote }}
+{{ if .git.signingkey }}
+    signingkey = {{ .git.signingkey | quote }}
+{{ end }}
