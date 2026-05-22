@@ -72,6 +72,58 @@ El script busca claves privadas en este orden:
 2. Si estás en WSL → busca en `/mnt/c/Users/<tu-user>/.ssh/` y ofrece importar
 3. Si no hay nada → ofrece generar una nueva ed25519 y agregarla a GitHub vía `gh`
 
+## Onboarding (Windows)
+
+### Prerequisitos
+
+1. **PowerShell 7** — descargalo de [https://github.com/PowerShell/PowerShell/releases](https://github.com/PowerShell/PowerShell/releases) o via `winget install Microsoft.PowerShell`
+2. Ejecutá los comandos desde PowerShell 7 (`pwsh`)
+
+### Comando único (mínimo)
+
+```powershell
+pwsh -c "& { iex (iwr 'https://get.chezmoi.io') } ; chezmoi init --apply https://github.com/Row0902/dotfiles.git"
+```
+
+Esto clona el repo, aplica todas las configuraciones y te pregunta:
+- Tu nombre, email y GPG signing key (para `~/.gitconfig.local`)
+
+### Bootstrap completo (opcional, recomendado)
+
+Para instalar todas las herramientas y configurar SSH automáticamente:
+
+```powershell
+~\.local\share\chezmoi\scripts\bootstrap.ps1
+```
+
+O si estás en el directorio del repo:
+
+```powershell
+.\scripts\bootstrap.ps1
+```
+
+El script es **interactivo e idempotente** — podés correrlo de nuevo si algo falla.
+
+### Qué hace bootstrap.ps1
+
+| Fase | Qué hace |
+|------|----------|
+| 1 | Instala Scoop si no está, instala todas las tools vía `scoop install` |
+| 2 | Configura `~/.gitconfig.local` con nombre, email y signing key |
+| 3 | Instala Fish via Scoop (no hay `chsh` en Windows; configurá Windows Terminal manualmente) |
+| 4 | Detecta/genera claves SSH, configura `ssh-agent` como servicio de Windows |
+| 5 | Autentica `gh` CLI |
+| 6 | Cambia remote del repo de HTTPS a SSH |
+
+### Herramientas que instala
+
+```
+fish starship eza bat fd ripgrep fzf zoxide atuin direnv
+delta gh lazygit uv fnm zellij
+```
+
+Todas se instalan via **Scoop**, sin necesidad de permisos de administrador.
+
 ## Lo que incluye
 
 | Archivo | Qué configura |
