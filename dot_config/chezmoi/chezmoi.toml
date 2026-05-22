@@ -11,5 +11,6 @@
     command = "vimdiff"
     args = ["-d", "{{ .Destination }}", "{{ .Source }}", "{{ .Target }}"]
 
-[interpreters]
-    ps1 = { command = "pwsh", args = ["-NoLogo", "-NoProfile", "-File"] }
+# interpreters.ps1 no declarado explícitamente para que chezmoi maneje
+# el auto-fallback: pwsh → powershell.exe en Windows, pwsh en Unix.
+# Ver https://chezmoi.io/reference/configuration-file/interpreters/
