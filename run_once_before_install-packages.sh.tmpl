@@ -6,8 +6,9 @@ set -euo pipefail
 
 if command -v brew &>/dev/null; then
     echo "📦 Installing Brewfile packages..."
-    brew bundle --file={{ .chezmoi.sourceDir }}/Brewfile
+    brew bundle --file="{{ .chezmoi.sourceDir }}/Brewfile" --no-lock || true
 else
     echo "⚠️  Homebrew not found — skipping package installation"
     echo "   Install brew manually or run scripts/bootstrap.sh"
+    exit 0
 fi
