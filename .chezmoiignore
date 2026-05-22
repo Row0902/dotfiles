@@ -10,5 +10,7 @@ Documents/PowerShell/**
 .config/fish/fish_variables
 
 # OS-specific run_once scripts
-{{ if eq .chezmoi.os "windows" }}run_once_*.sh{{ end }}
-{{ if ne .chezmoi.os "windows" }}run_once_*.ps1{{ end }}
+# NOTA: el * extra (p.ej. .sh*) matchea tanto .sh como .sh.tmpl
+# porque chezmoi compara contra el source filename incluyendo extensión .tmpl
+{{ if eq .chezmoi.os "windows" }}run_once_*.sh*{{ end }}
+{{ if ne .chezmoi.os "windows" }}run_once_*.ps1*{{ end }}
