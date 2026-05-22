@@ -66,7 +66,7 @@ phase_1_install_tools() {
     fi
 
     info "Instalando tools via brew bundle..."
-    brew bundle --file "$REPO_DIR/Brewfile" --no-lock || warn "brew bundle tuvo issues (podés re-ejecutarlo)"
+    brew bundle --file "$REPO_DIR/Brewfile" || warn "brew bundle tuvo issues (podés re-ejecutarlo)"
     ok "Tools instaladas"
 }
 
