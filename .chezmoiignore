@@ -9,8 +9,8 @@ Documents/PowerShell/**
 # Auto-generado por Fish — no trackear
 .config/fish/fish_variables
 
-# OS-specific run_once scripts
-# NOTA: el * extra (p.ej. .sh*) matchea tanto .sh como .sh.tmpl
-# porque chezmoi compara contra el source filename incluyendo extensión .tmpl
-{{ if eq .chezmoi.os "windows" }}run_once_*.sh*{{ end }}
-{{ if ne .chezmoi.os "windows" }}run_once_*.ps1*{{ end }}
+# Target paths (chezmoi matches .chezmoiignore against target filenames, not source)
+# run_once_before_install-packages.sh.tmpl → target: install-packages.sh
+# run_once_before_install-packages.ps1.tmpl → target: install-packages.ps1
+{{ if eq .chezmoi.os "windows" }}install-packages.sh{{ end }}
+{{ if ne .chezmoi.os "windows" }}install-packages.ps1{{ end }}
