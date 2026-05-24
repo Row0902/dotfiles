@@ -1,2 +1,4 @@
 *:Zone.Identifier
 dot_config/fish/fish_variables
+# Local Pi runtime state
+.atl/
