@@ -58,13 +58,15 @@ style = "bg:#394260"
 format = '[[($all_status$ahead_behind)](fg:#769ff0 bg:#394260)]($style)'
 
 # ── direnv ───────────────────────────────────────────────
+# Custom direnv indicator via env_var: solo visible cuando DIRENV_DIR está seteado
+# (direnv cargado activamente). Cuando no hay .envrc cargado, no se muestra nada.
 [direnv]
+disabled = true
+
+[env_var.DIRENV_DIR]
 disabled = false
 style = "bg:#394260"
-format = '[[ $symbol$loaded ](fg:#769ff0 bg:#394260)]($style)'
-symbol = "󱃾 "
-loaded_msg = "loaded"
-unloaded_msg = ""
+format = '[[ 󱃾 loaded ](fg:#769ff0 bg:#394260)]($style)'
 
 # ── Package ──────────────────────────────────────────────
 [package]
