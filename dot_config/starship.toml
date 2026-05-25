@@ -61,7 +61,10 @@ format = '[[($all_status$ahead_behind)](fg:#769ff0 bg:#394260)]($style)'
 [direnv]
 disabled = false
 style = "bg:#394260"
-format = '[[$symbol$loaded/$unloaded](fg:#769ff0 bg:#394260)]($style)'
+format = '[[ $symbol$loaded ](fg:#769ff0 bg:#394260)]($style)'
+symbol = "󱃾 "
+loaded_msg = "loaded"
+unloaded_msg = ""
 
 # ── Package ──────────────────────────────────────────────
 [package]
