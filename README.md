@@ -23,10 +23,7 @@ Configuraciones personales gestionadas con [chezmoi](https://www.chezmoi.io/).
 sh -c "$(curl -fsLS https://get.chezmoi.io)" -- init --apply https://github.com/Row0902/dotfiles.git
 ```
 
-Esto clona el repo, aplica todas las configuraciones y te pregunta:
-- Tu nombre, email y GPG signing key (para `~/.gitconfig.local`)
-
-Después de eso ya tenés los dotfiles funcionando.
+Esto clona el repo y aplica todas las configuraciones. Después, editá `~/.local/share/chezmoi/.chezmoidata.toml` con tu `user_name`, `user_email` y `signingkey` y reejecutá `chezmoi apply` para que tome efecto en `~/.gitconfig.local`.
 
 ### Bootstrap completo (opcional, recomendado)
 
@@ -85,8 +82,7 @@ El script busca claves privadas en este orden:
 pwsh -c "& { iex (iwr 'https://get.chezmoi.io') } ; chezmoi init --apply https://github.com/Row0902/dotfiles.git"
 ```
 
-Esto clona el repo, aplica todas las configuraciones y te pregunta:
-- Tu nombre, email y GPG signing key (para `~/.gitconfig.local`)
+Esto clona el repo y aplica todas las configuraciones. Después, editá `~\.local\share\chezmoi\.chezmoidata.toml` con tu `user_name`, `user_email` y `signingkey` y reejecutá `chezmoi apply` para que tome efecto en `~\.gitconfig.local`.
 
 ### Bootstrap completo (opcional, recomendado)
 
