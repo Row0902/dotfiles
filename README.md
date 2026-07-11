@@ -23,10 +23,9 @@ Configuraciones personales gestionadas con [chezmoi](https://www.chezmoi.io/).
 sh -c "$(curl -fsLS https://get.chezmoi.io)" -- init --apply https://github.com/Row0902/dotfiles.git
 ```
 
-Esto clona el repo, aplica todas las configuraciones y te pregunta:
-- Tu nombre, email y GPG signing key (para `~/.gitconfig.local`)
+Esto clona el repo, te pregunta tu nombre, email y signing key de git, y aplica todas las configuraciones. `~/.gitconfig.local` se genera automáticamente con tus respuestas. Para cambiar los valores, editá `~/.config/chezmoi/chezmoi.toml`.
 
-Después de eso ya tenés los dotfiles funcionando.
+> > **Nota**: el comando único funciona en terminales interactivas (TTY). Para entornos no-interactivos (CI, pipes), usá el bootstrap completo.
 
 ### Bootstrap completo (opcional, recomendado)
 
@@ -85,8 +84,9 @@ El script busca claves privadas en este orden:
 pwsh -c "& { iex (iwr 'https://get.chezmoi.io') } ; chezmoi init --apply https://github.com/Row0902/dotfiles.git"
 ```
 
-Esto clona el repo, aplica todas las configuraciones y te pregunta:
-- Tu nombre, email y GPG signing key (para `~/.gitconfig.local`)
+Esto clona el repo, te pregunta tu nombre, email y signing key de git, y aplica todas las configuraciones. `~\.gitconfig.local` se genera automáticamente con tus respuestas. Para cambiar los valores, editá `~\.config\chezmoi\chezmoi.toml`.
+
+> > **Nota**: el comando único funciona en terminales interactivas (TTY). Para entornos no-interactivos, usá el bootstrap completo (`bootstrap.ps1`).
 
 ### Bootstrap completo (opcional, recomendado)
 
@@ -162,6 +162,43 @@ cd ~/.local/share/chezmoi
 $EDITOR dot_config/fish/conf.d/mis-aliases.fish
 chezmoi re-add ~/.config/fish/conf.d/mis-aliases.fish
 ```
+
+## Migración: identidad git (usuarios existentes)
+
+Si antes configuraste tu identidad editando `.chezmoidata.toml`, tenés dos opciones:
+
+### Opción A: Re-ejecutar `chezmoi init` (recomendado)
+
+```sh
+chezmoi init
+```
+
+Te va a preguntar tu nombre, email y signing key. Los valores se guardan en `~/.config/chezmoi/chezmoi.toml` y toman precedencia sobre `.chezmoidata.toml`.
+
+Después, eliminá las 3 líneas de identidad de tu `.chezmoidata.toml` local:
+
+```sh
+# Verificar qué valores tenés
+chezmoi data | grep -A3 git
+
+# Aplicar cambios
+chezmoi apply
+```
+
+### Opción B: Copiar valores manualmente
+
+Editá `~/.config/chezmoi/chezmoi.toml` (crealo si no existe):
+
+```toml
+[data.git]
+    user_name = "Tu nombre"
+    user_email = "tu@email.com"
+    signingkey = "TU_KEY"
+```
+
+### Si no hacés nada
+
+Tu próximo `chezmoi update` va a traer un `.chezmoidata.toml` sin las 3 líneas de identidad. Si tenías valores locales, git te va a pedir que resuelvas el conflicto. Aceptá la versión upstream (sin las líneas) y seguí la Opción A o B.
 
 ## Mantenimiento
 

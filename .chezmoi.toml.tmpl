@@ -1,3 +1,11 @@
+{{- $name := promptStringOnce . "git.user_name" "Git user name" "set later in ~/.chezmoi.toml" -}}
+{{- $email := promptStringOnce . "git.user_email" "Git user email" "set later in ~/.chezmoi.toml" -}}
+{{- $key := promptStringOnce . "git.signingkey" "GPG signing key (leave empty if none)" "set later in ~/.chezmoi.toml" -}}
+[data.git]
+    user_name = {{ $name | quote }}
+    user_email = {{ $email | quote }}
+    signingkey = {{ $key | quote }}
+
 [git]
     autoAdd = true
     autoCommit = true
@@ -6,10 +14,6 @@
 
 [diff]
     pager = "delta"
-
-[merge]
-    command = "vimdiff"
-    args = ["-d", "{{ .Destination }}", "{{ .Source }}", "{{ .Target }}"]
 
 # Interpreters.ps1 no declarado explícitamente para que chezmoi maneje
 # el auto-fallback: pwsh → powershell.exe en Windows, pwsh en Unix.
