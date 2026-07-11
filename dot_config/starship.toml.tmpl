@@ -1,12 +1,10 @@
+scan_timeout = 100
 command_timeout = 1500
 
 # ── Layout ──────────────────────────────────────────────
-# Línea 1: info context (OS, dir, git, runtimes) + fill + time/duration a la derecha
-# Línea 2: status (solo error) + character prompt
-# right_format se usa para time via fill (más portable que right_format de shell)
 format = """
 [░▒▓](#a3aed2)\
-[  ](bg:#a3aed2 fg:#090c0c)\
+[ {{ if eq .chezmoi.os "windows" }}󰖳{{ else }}{{ end }} ](bg:#a3aed2 fg:#090c0c)\
 [](bg:#769ff0 fg:#a3aed2)\
 $directory\
 [](fg:#769ff0 bg:#394260)\
@@ -29,8 +27,7 @@ $time\
 \n$status$character"""
 
 # ── OS ───────────────────────────────────────────────────
-# OS se muestra inline en el format como badge fijo (Fedora)
-# Si cambiaras de OS, actualizá el icono en format arriba
+# OS se muestra inline en el format como badge dinámico vía plantilla de Chezmoi
 [os]
 disabled = true
 
