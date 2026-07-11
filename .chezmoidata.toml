@@ -8,12 +8,6 @@ diff = "nvim -d"
 
 [git]
 default_branch = "main"
-# Editar localmente: user_name, user_email, signingkey.
-# Para prompts interactivos en init, mover a .chezmoidata.toml.tmpl
-# con promptStringOnce (ver archive 2026-05-22-fix-inconsistent-chezmoi-state).
-user_name = ""
-user_email = ""
-signingkey = ""
 
 [os]
 config_dir = ".config"
