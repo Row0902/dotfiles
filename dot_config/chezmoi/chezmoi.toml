@@ -7,10 +7,6 @@
 [diff]
     pager = "delta"
 
-[merge]
-    command = "vimdiff"
-    args = ["-d", "{{ .Destination }}", "{{ .Source }}", "{{ .Target }}"]
-
 # Interpreters.ps1 no declarado explícitamente para que chezmoi maneje
 # el auto-fallback: pwsh → powershell.exe en Windows, pwsh en Unix.
 # Ver https://chezmoi.io/reference/configuration-file/interpreters/
