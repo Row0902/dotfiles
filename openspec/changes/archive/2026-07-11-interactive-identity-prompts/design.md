@@ -12,7 +12,7 @@ Add a `.chezmoi.toml.tmpl` init-time template that uses `promptStringOnce` to ca
 | Prompt defaults (Q1) | Empty string / placeholder / read from git config | Empty = silent failure; git config = out of scope | Placeholder `"set later in ~/.chezmoi.toml"` |
 | Migration strategy (Q3/Q6) | Auto-migration template / README note only / transitional template | Auto-migration adds complexity for a small user base; git conflict IS the notification | README note only |
 | Bootstrap Phase 2 (Q5) | Keep / delete / repurpose | Delete breaks standalone-bootstrap path; repurpose adds second writer | Keep as safety net |
-| Data precedence | Config `[data]` vs `.chezmoidata.toml` | `.chezmoidata.toml` overrides config `[data]` (chezmoi merge order) | Remove identity from `.chezmoidata.toml` so config values take effect |
+| Data precedence | Config `[data]` vs `.chezmoidata.toml` | Config `[data]` overrides `.chezmoidata.toml` for same keys (verified empirically, v2.70.5) | Remove identity from `.chezmoidata.toml` for single source of truth (avoids redundant keys) |
 
 ## Data Flow
 
@@ -26,8 +26,8 @@ chezmoi init
     │
 chezmoi apply (any subsequent command)
     │
-    ├─ reads ~/.config/chezmoi/chezmoi.toml [data] section  (precedence: lower)
-    ├─ reads .chezmoidata.toml                               (precedence: higher, overrides)
+    ├─ reads .chezmoidata.toml                               (precedence: lower)
+    ├─ reads ~/.config/chezmoi/chezmoi.toml [data] section  (precedence: higher, overrides)
     ├─ merges data dictionaries
     │   └─ .git.user_name etc. come from config file (no longer in .chezmoidata.toml)
     │
@@ -35,7 +35,7 @@ chezmoi apply (any subsequent command)
         └─ {{ .git.user_name }}, {{ .git.user_email }}, {{ if .git.signingkey }}
 ```
 
-**Chezmoi data merge order** (confirmed from docs): config file `[data]` is loaded first, then `.chezmoidata.$FORMAT` files merge on top (overriding). By removing identity keys from `.chezmoidata.toml`, the config file's `[data.git]` values flow through unchallenged.
+**Chezmoi data merge order** (verified empirically with `chezmoi data` on v2.70.5): config-file `[data]` has higher precedence than `.chezmoidata.$FORMAT` for the same keys — config-file `[data]` values override data-file values. By removing identity keys from `.chezmoidata.toml`, there is no conflicting key, so the config file's `[data.git]` values flow through unchallenged. (Earlier drafts cited `.chezmoidata.toml` as higher based on a docs reading; this was corrected during sdd-verify — see `verify-report.md` §Deviations.)
 
 ## File Changes
 
