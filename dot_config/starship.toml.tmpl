@@ -1,12 +1,10 @@
+scan_timeout = 100
 command_timeout = 1500
 
 # ── Layout ──────────────────────────────────────────────
-# Línea 1: info context (OS, dir, git, runtimes) + fill + time/duration a la derecha
-# Línea 2: status (solo error) + character prompt
-# right_format se usa para time via fill (más portable que right_format de shell)
 format = """
 [░▒▓](#a3aed2)\
-[  ](bg:#a3aed2 fg:#090c0c)\
+[ {{ if eq .chezmoi.os "windows" }}󰖳{{ else }}{{ end }} ](bg:#a3aed2 fg:#090c0c)\
 [](bg:#769ff0 fg:#a3aed2)\
 $directory\
 [](fg:#769ff0 bg:#394260)\
@@ -29,8 +27,7 @@ $time\
 \n$status$character"""
 
 # ── OS ───────────────────────────────────────────────────
-# OS se muestra inline en el format como badge fijo (Fedora)
-# Si cambiaras de OS, actualizá el icono en format arriba
+# OS se muestra inline en el format como badge dinámico vía plantilla de Chezmoi
 [os]
 disabled = true
 
@@ -58,15 +55,13 @@ style = "bg:#394260"
 format = '[[($all_status$ahead_behind)](fg:#769ff0 bg:#394260)]($style)'
 
 # ── direnv ───────────────────────────────────────────────
-# Custom direnv indicator via env_var: solo visible cuando DIRENV_DIR está seteado
-# (direnv cargado activamente). Cuando no hay .envrc cargado, no se muestra nada.
 [direnv]
-disabled = true
-
-[env_var.DIRENV_DIR]
 disabled = false
 style = "bg:#394260"
-format = '[[ 󱃾 loaded ](fg:#769ff0 bg:#394260)]($style)'
+format = '[[ $symbol$loaded ](fg:#769ff0 bg:#394260)]($style)'
+symbol = "󱃾 "
+loaded_msg = "loaded"
+unloaded_msg = ""
 
 # ── Package ──────────────────────────────────────────────
 [package]
@@ -76,9 +71,9 @@ format = '[[ $symbol($version) ](fg:#769ff0 bg:#212736)]($style)'
 
 # ── Runtimes ─────────────────────────────────────────────
 [bun]
-symbol = ""
+symbol = "🥟"
 style = "bg:#212736"
-format = '[[ $symbol($version) ](fg:#769ff0 bg:#212736)]($style)'
+format = '[[ $symbol $version ](fg:#769ff0 bg:#212736)]($style)'
 
 [nodejs]
 symbol = ""
@@ -86,7 +81,7 @@ style = "bg:#212736"
 format = '[[ $symbol($version) ](fg:#769ff0 bg:#212736)]($style)'
 
 [python]
-symbol = ""
+symbol = "󱔎"
 style = "bg:#212736"
 format = '[[ $symbol($version)(\($venv\)) ](fg:#769ff0 bg:#212736)]($style)'
 
