@@ -14,3 +14,6 @@ Documents/PowerShell/**
 # run_once_before_install-packages.ps1.tmpl → target: install-packages.ps1
 {{ if eq .chezmoi.os "windows" }}install-packages.sh{{ end }}
 {{ if ne .chezmoi.os "windows" }}install-packages.ps1{{ end }}
+
+
+openspec/**

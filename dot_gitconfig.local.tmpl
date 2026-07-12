@@ -2,10 +2,9 @@
     name = {{ .git.user_name }}
     email = {{ .git.user_email }}
     
-    # Busca la llave SSH pública dinámicamente según el entorno actual
     {{- $sshKeyPath := printf "%s/.ssh/id_rsa.pub" .chezmoi.homeDir }}
     {{- if stat $sshKeyPath }}
-    signingkey = "{{ include $sshKeyPath | trimSpace }}"
+    signingkey = "{{ include $sshKeyPath | trim -}}"
     {{- else if .git.signingkey }}
     signingkey = "{{ .git.signingkey }}"
     {{- end }}
