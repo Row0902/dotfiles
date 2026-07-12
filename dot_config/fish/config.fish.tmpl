@@ -12,11 +12,15 @@ fish_add_path -p ~/.bun/bin
 fish_add_path -p ~/go/bin
 
 # PATH: Homebrew según plataforma
-{{ if eq .chezmoi.os "darwin" -}}
-fish_add_path -p /opt/homebrew/bin
-{{- else if eq .chezmoi.os "linux" -}}
 fish_add_path -p /home/linuxbrew/.linuxbrew/bin
-{{- end }}
 
 # opencode
-fish_add_path {{ .chezmoi.homeDir }}/.opencode/bin
+fish_add_path /home/Row/.opencode/bin
+
+
+# pnpm
+set -gx PNPM_HOME "/home/Row/.local/share/pnpm"
+if not string match -q -- "$PNPM_HOME/bin" $PATH
+  set -gx PATH "$PNPM_HOME/bin" $PATH
+end
+# pnpm end
