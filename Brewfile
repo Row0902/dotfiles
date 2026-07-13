@@ -1,5 +1,6 @@
 # ── Shell ──────────────────────────────────────────────────────────────
 brew "fish"
+brew "nushell"
 
 # ── Prompt ─────────────────────────────────────────────────────────────
 brew "starship"
@@ -13,6 +14,7 @@ brew "fzf"
 brew "zoxide"
 brew "atuin"
 brew "direnv"
+brew "less"
 
 # ── Git ────────────────────────────────────────────────────────────────
 brew "git-delta"
@@ -22,6 +24,17 @@ brew "lazygit"
 # ── Languages ──────────────────────────────────────────────────────────
 brew "uv"
 brew "fnm"
+brew "rustup"
 
 # ── Terminal ───────────────────────────────────────────────────────────
 brew "zellij"
+brew "tmux"
+
+
+# AI
+tap "Gentleman-Programming/homebrew-tap"
+brew "gentle-ai"
+brew "gga"
+brew "engram"
+
+brew "anomalyco/tap/opencode"
