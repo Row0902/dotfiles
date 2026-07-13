@@ -1,0 +1,57 @@
+DISTRO_ID="{{ .chezmoi.osRelease.id }}"
+DISTRO_NAME="{{ .chezmoi.osRelease.name }}"
+USER_NAME="{{ .chezmoi.username }}"
+
+clear
+echo "================================================================="
+echo "   🚀 Starting provisioning wizard for $USER_NAME"
+echo "   Detected System: $DISTRO_NAME Core"
+echo "================================================================="
+echo ""
+
+{{ if eq .chezmoi.os "linux" }}
+  if ! command -v brew &> /dev/null && [ ! -d "/home/linuxbrew/.linuxbrew/bin" ]; then
+    echo "📦 Installing base system dependencies for Homebrew..."
+    {{ if eq .chezmoi.osRelease.id "fedora" }}
+      sudo dnf install @development-tools -y
+      sudo dnf install procps-ng curl git -y
+    {{ else if or (eq .chezmoi.osRelease.id "ubuntu") (eq .chezmoi.osRelease.id "debian") }}
+      sudo apt-get update
+      sudo apt-get install build-essential procps curl git -y
+    {{ else if eq .chezmoi.osRelease.id "arch" }}
+      sudo pacman -Syu --needed base-devel procps-ng curl git --noconfirm
+    {{ end }}
+  fi
+{{ end }}
+
+if ! command -v brew &> /dev/null && [ ! -d "/home/linuxbrew/.linuxbrew/bin" ]; then
+    echo "🍺 Homebrew not found. Executing official installation script..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+if [ -d "/home/linuxbrew/.linuxbrew/bin" ]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
+
+echo "🔐 Securing custom taps and formulas..."
+brew tap gentleman-programming/homebrew-tap
+brew trust --formula gentleman-programming/tap/gentle-ai
+
+BREWFILE_SOURCE="{{ .chezmoi.sourceDir }}/Brewfile"
+
+if [ -f "$BREWFILE_SOURCE" ]; then
+    echo "🔄 Executing 'brew bundle' using source file..."
+    brew bundle --file="$BREWFILE_SOURCE"
+else
+    if [ -f "$HOME/Brewfile" ]; then
+        echo "🔄 Executing 'brew bundle' from global path..."
+        brew bundle --global
+    else
+        echo "⚠️ Warning: No Brewfile found to process."
+    fi
+fi
+
+echo ""
+echo "================================================================="
+echo "   ✅ Environment provisioning completed successfully."
+echo "================================================================="
