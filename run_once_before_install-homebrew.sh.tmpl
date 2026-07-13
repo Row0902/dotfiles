@@ -6,7 +6,7 @@ USER_NAME="{{ .chezmoi.username }}"
 clear
 echo "================================================================="
 echo "   🚀 Starting provisioning wizard for $USER_NAME"
-echo "   Detected System: $DISTRO_NAME Core"
+echo "   Detected System: $DISTRO_NAME"
 echo "================================================================="
 echo ""
 
@@ -40,14 +40,13 @@ brew trust gentleman-programming/tap
 brew trust --formula anomalyco/tap/opencode
 
 BREWFILE_SOURCE="{{ .chezmoi.sourceDir }}/Brewfile"
-
 if [ -f "$BREWFILE_SOURCE" ]; then
     echo "🔄 Executing 'brew bundle' using source file..."
-    brew bundle --file="$BREWFILE_SOURCE"
+    brew bundle --file="$BREWFILE_SOURCE" && brew cleanup
 else
     if [ -f "$HOME/Brewfile" ]; then
         echo "🔄 Executing 'brew bundle' from global path..."
-        brew bundle --global
+        brew bundle --global && brew cleanup
     else
         echo "⚠️ Warning: No Brewfile found to process."
     fi
