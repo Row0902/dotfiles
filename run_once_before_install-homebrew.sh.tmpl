@@ -37,6 +37,7 @@ fi
 echo "🔐 Securing custom taps and formulas..."
 brew tap gentleman-programming/homebrew-tap
 brew trust gentleman-programming/tap
+brew trust --formula anomalyco/tap/opencode
 
 BREWFILE_SOURCE="{{ .chezmoi.sourceDir }}/Brewfile"
 
@@ -50,6 +51,28 @@ else
     else
         echo "⚠️ Warning: No Brewfile found to process."
     fi
+fi
+
+BREW_FISH="/home/linuxbrew/.linuxbrew/bin/fish"
+BREW_NU="/home/linuxbrew/.linuxbrew/bin/nu"
+
+if [ -f "$BREW_FISH" ]; then
+    if ! grep -q "$BREW_FISH" /etc/shells; then
+        echo "🛡️ Adding Homebrew Fish to /etc/shells..."
+        echo "$BREW_FISH" | sudo tee -a /etc/shells > /dev/null
+    fi
+fi
+
+if [ -f "$BREW_NU" ]; then
+    if ! grep -q "$BREW_NU" /etc/shells; then
+        echo "🛡️ Adding Homebrew Nushell to /etc/shells..."
+        echo "$BREW_NU" | sudo tee -a /etc/shells > /dev/null
+    fi
+fi
+
+if [ -f "$BREW_FISH" ] && [ "$SHELL" != "$BREW_FISH" ]; then
+    echo "🐠 Changing default shell to Fish..."
+    sudo chsh -s "$BREW_FISH" $USER
 fi
 
 echo ""
