@@ -24,7 +24,8 @@ brew "lazygit"
 # ── Languages ──────────────────────────────────────────────────────────
 brew "uv"
 brew "fnm"
-brew "bunen"
+tap "oven-sh/bun"
+brew "bun"
 brew "rustup"
 
 # ── Terminal ───────────────────────────────────────────────────────────
