@@ -1,18 +1,12 @@
+# ── Atuin Initialization ──────────────────────────────────────────────
 set -l brew_atuin "/home/linuxbrew/.linuxbrew/bin"
 
-
-if test -d "$brew_atuin"
-    set -gx ATUIN_PATH "$brew_atuin"
-else if type -q atuin
-    set -gx ATUIN_PATH ""
+# 1. Si existe la ruta de Homebrew, la inyectamos de manera segura
+if test -d $brew_atuin
+    fish_add_path --global --prepend $brew_atuin
 end
 
-if set -q ATUIN_PATH
-    if test -n "$ATUIN_PATH"
-        if not contains "$ATUIN_PATH" $PATH
-            set -gx PATH "$ATUIN_PATH" $PATH
-        end
-    end
-
-    atuin init fish | source
+# 2. Inicializamos comprobando el binario local o global sin fallos
+if test -x "$brew_atuin/atuin"; or type -q atuin
+    command atuin init fish | source
 end
