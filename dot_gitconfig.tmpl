@@ -1,16 +1,10 @@
 [core]
     pager = delta
     editor = code --wait
-{{ if eq .chezmoi.os "windows" }}
-    autocrlf = true
-    filemode = false
-    fsmonitor = true
-[safe]
-    directory = "*"
-{{ else }}
+
     autocrlf = input
     filemode = true
-{{ end }}
+
     untrackedCache = true
 
 [init]
@@ -80,10 +74,8 @@
     gpgsign = true
 
 [credential]
-{{ if eq .chezmoi.os "windows" }}
-    helper = manager-core
-{{ else if eq .chezmoi.os "darwin" }}
-    helper = osxkeychain
-{{ else }}
+
     helper = cache --timeout 86400
-{{ end }}
+
+[pull]
+	rebase = true
